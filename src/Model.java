@@ -1,18 +1,20 @@
 public class Model {
-    // TODO
-    // method getPossibleMoves for each player
 
     private Board board;
 
-    private Player player1;
-    private Player player2;
+    private Player blackPlayer;
+    private Player whitePlayer;
 
-    public Model(String nameP1, String nameP2, Boolean isP1Computer, Boolean isP2Computer) {
+    private State state;
+
+    public Model(String nameBP, String nameWP, Type typeBP, Type typeWP) {
 
         setBoard(new Board());
 
-        setPlayer1(new Player(nameP1, isP1Computer, Checker.BLACK));
-        setPlayer2(new Player(nameP2, isP2Computer, Checker.WHITE));
+        setBlackPlayer(new Player(nameWP, typeWP));
+        setWhitePlayer(new Player(nameBP, typeBP));
+
+        setState(State.STARTING);
     }
 
     public Board getBoard() {
@@ -23,20 +25,28 @@ public class Model {
         this.board = board;
     }
 
-    public Player getPlayer1() {
-        return player1;
+    public Player getBlackPlayer() {
+        return blackPlayer;
     }
 
-    public void setPlayer1(Player player1) {
-        this.player1 = player1;
+    public void setBlackPlayer(Player blackPlayer) {
+        this.blackPlayer = blackPlayer;
     }
 
-    public Player getPlayer2() {
-        return player2;
+    public Player getWhitePlayer() {
+        return whitePlayer;
     }
 
-    public void setPlayer2(Player player2) {
-        this.player2 = player2;
+    public void setWhitePlayer(Player whitePlayer) {
+        this.whitePlayer = whitePlayer;
+    }
+
+    public State getState() {
+        return state;
+    }
+
+    public void setState(State state) {
+        this.state = state;
     }
 
 }
@@ -216,14 +226,11 @@ class Player {
 
     private String name;
 
-    private boolean isComputer;
+    private Type type;
 
-    private Checker checker;
-
-    public Player(String name, boolean isComputer, Checker checker) {
+    public Player(String name, Type type) {
         setName(name);
-        setComputer(isComputer);
-        setChecker(checker);
+        setType(type);
     }
 
     public String getName() {
@@ -234,23 +241,32 @@ class Player {
         this.name = name;
     }
 
-    public boolean isComputer() {
-        return isComputer;
+    public Type getType() {
+        return type;
     }
 
-    public void setComputer(boolean isComputer) {
-        this.isComputer = isComputer;
+    public void setType(Type type) {
+        this.type = type;
     }
 
-    public Checker getChecker() {
-        return checker;
-    }
+}
 
-    public void setChecker(Checker checker) {
-        this.checker = checker;
-    }
+enum Type {
+    COMPUTER, HUMAN
 }
 
 enum Checker {
-    WHITE, BLACK;
+    WHITE, BLACK
+}
+
+enum State {
+    // meaning of states:
+    // STARTING - before the start, when players roll the die to determine who
+    // starts first
+    // MOVE_WHITE - white player on the move
+    // MOVE_BLACK - black player on the move
+    // DRAW - game ended in a draw
+    // WIN_BLACK - black player won
+    // WIN_WHITE - white player won
+    STARTING, MOVE_WHITE, MOVE_BLACK, DRAW, WIN_BLACK, WIN_WHITE
 }
