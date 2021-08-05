@@ -17,6 +17,7 @@ public class Model {
         setState(State.STARTING);
     }
 
+
     public Board getBoard() {
         return board;
     }
@@ -66,26 +67,26 @@ class Board {
         bar = new Bar();
     }
 
-    public void move(Checker checker, int startingPoint, int endPoint) {
+    public void move(Checker checker, Move move) {
         int c = (checker == Checker.BLACK ? 1 : -1);
 
         // case in which the opposing player has been hit
-        if (c * points[endPoint] == -1) {
-            points[startingPoint] -= c;
-            points[endPoint] = c;
+        if (c * points[move.getEndPoint()] == -1) {
+            points[move.getStartPoint()] -= c;
+            points[move.getEndPoint()] = c;
         }
         // usual case
         else {
-            points[startingPoint] -= c;
-            points[endPoint] += c;
+            points[move.getStartPoint()] -= c;
+            points[move.getEndPoint()] += c;
         }
     }
 
-    public boolean isMoveValid(Checker checker, int startingPoint, int endPoint) {
+    public boolean isMoveValid(Checker checker, Move move) {
         int c = (checker == Checker.BLACK ? 1 : -1);
 
         // if checkers on board make sense
-        if ((c * points[startingPoint] > 0) && (c * points[endPoint] > -2)) {
+        if ((c * points[move.getStartPoint()] > 0) && (c * points[move.getEndPoint()] > -2)) {
             return false;
         }
 
@@ -95,7 +96,7 @@ class Board {
         }
 
         // if the direction of moving is correct
-        if ((endPoint - startingPoint) * c <= 0) {
+        if ((move.getEndPoint() - move.getStartPoint()) * c <= 0) {
             return false;
         }
 
@@ -247,6 +248,33 @@ class Player {
 
     public void setType(Type type) {
         this.type = type;
+    }
+
+}
+
+class Move {
+    private int startPoint;
+    private int endPoint;
+
+    public Move(int startPoint, int endPoint) {
+        setStartPoint(startPoint);
+        setStartPoint(endPoint);
+    }
+
+    public int getStartPoint() {
+        return startPoint;
+    }
+
+    public void setStartPoint(int startPoint) {
+        this.startPoint = startPoint;
+    }
+
+    public int getEndPoint() {
+        return endPoint;
+    }
+
+    public void setEndPoint(int endPoint) {
+        this.endPoint = endPoint;
     }
 
 }
