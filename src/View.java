@@ -46,20 +46,33 @@ public class View extends JFrame implements BoardViewDelegate {
 	}
 
 	@Override
-	public Set<Integer> draggable(Stone stone) {
-		Integer[] pips = new Integer[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, stone.getPip() };
+	public Set<Integer> draggable(int start) {
+		Integer[] pips = new Integer[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
 		return new HashSet<Integer>(Arrays.asList(pips));
+	}
+	
+	@Override
+	public void onDragged(int start, int end) {
+		
 	}
 }
 
 interface BoardViewDelegate {
 	/**
-	 * Tells whether a stone may be dragged or not.
+	 * Tells whether a stone may be dragged or not by telling where it may be dropped.
 	 * 
-	 * @param stone
+	 * @param start
 	 * @return Returns drop locations.
 	 */
-	Set<Integer> draggable(Stone stone);
+	Set<Integer> draggable(int start);
+	
+	/**
+	 * Event that's triggered when the stone has been dragged to a new location.
+	 * 
+	 * @param start
+	 * @param end
+	 */
+	void onDragged(int start, int end);
 }
 
 @SuppressWarnings("serial")
@@ -106,7 +119,7 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 	/**
 	 * The stone that is being dragged.
 	 */
-	private Stone dragged;
+	private Integer dragged;
 	/**
 	 * Tells what kind of stone we are dragging.
 	 */
@@ -181,8 +194,11 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 			int stones = this.pips[i];
 			Color color = this.getStoneColor(stones);
 
-			// Draw the stones.
-			for (int j = 0; j < Math.abs(this.pips[i]); j++) {
+			// Get the number of stones and account for the dragging.
+			int checkers = Math.abs(this.pips[i]);
+			if (this.dragged != null && this.dragged == i) checkers -= this.direction;
+			
+			for (int j = 0; j < checkers; j++) {
 				Point coord = this.getStonePosition(i, j);
 				this.paintStone(g, coord.x, coord.y, size / 2, color);
 			}
@@ -548,14 +564,10 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 
 		// Makes sure we actually clicked on a stone.
 		if (index >= 0) {
-			Stone stone = new Stone(index, n);
-
-			this.dragged = stone;
+			this.dragged = index;
 			this.mouse = e.getPoint();
-			this.drops = this.delegate.draggable(stone);
+			this.drops = this.delegate.draggable(index);
 			this.direction = this.pips[index] / Math.abs(this.pips[index]);
-
-			this.pips[index] -= direction;
 		}
 
 		// Rerender the screen.
@@ -566,14 +578,19 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 	public void mouseReleased(MouseEvent e) {
 		if (this.dragged == null) return;
 		
-		if (this.target == null)
-			this.pips[this.dragged.getPip()] += this.direction;
-		else
-			this.pips[this.target] += this.direction;
+		// Calculate the movement of the checker.
+		int start = this.dragged;
+		int end = start;
 		
+		if (this.target != null) end = this.target;
+		
+		// Reset dragging values.
 		this.dragged = null;
 		this.drops = new HashSet<Integer>();
 		this.direction = 0;
+		
+		// Trigger event.
+		this.delegate.onDragged(start, end);
 
 		this.repaint();
 	}
@@ -670,33 +687,5 @@ class Point2D {
 
 	double getFi() {
 		return Math.atan(y / x);
-	}
-}
-
-class Stone {
-	/**
-	 * Index of the pip.
-	 */
-	private int pip;
-	/**
-	 * Index of a stone on the given pip.
-	 */
-	private int stone;
-
-	// MARK: - Constructor
-
-	Stone(int pip, int stone) {
-		this.pip = pip;
-		this.stone = stone;
-	}
-
-	// MARK: - Accessors
-
-	int getPip() {
-		return this.pip;
-	}
-
-	int getStone() {
-		return this.stone;
 	}
 }
