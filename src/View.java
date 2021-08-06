@@ -31,15 +31,17 @@ public class View extends JFrame implements BoardViewDelegate {
 		view.pack();
 		view.setVisible(true);
 	}
+	
+	private int[] board;
 
 	// MARK: - Constructor
 
 	public View() {
 		this.setDefaultCloseOperation(EXIT_ON_CLOSE);
 
-		int[] pips = {2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2 };
+		this.board = new int[] {2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2 };
 
-		BoardView board = new BoardView(this, pips);
+		BoardView board = new BoardView(this);
 
 		this.add(board);
 		this.setPreferredSize(board.getPreferredSize());
@@ -47,17 +49,37 @@ public class View extends JFrame implements BoardViewDelegate {
 
 	@Override
 	public Set<Integer> draggable(int start) {
-		Integer[] pips = new Integer[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
-		return new HashSet<Integer>(Arrays.asList(pips));
+		Set<Integer> drops = new HashSet<Integer>();
+		
+		for (int i = 0; i < board.length; i++) {
+			int j = board[i];
+			if (j * board[start] >= 0) drops.add(i);
+			
+		}
+		
+		return drops;
 	}
 
 	@Override
 	public void onDragged(int start, int end) {
-
+		int direction = this.board[start] / Math.abs(this.board[start]);
+		
+		this.board[start] -= direction;
+		this.board[end] += direction;
+	}
+	
+	public int[] board() {
+		return this.board;
 	}
 }
 
 interface BoardViewDelegate {
+	/**
+	 * Returns the current state on the board.
+	 * @return
+	 */
+	int[] board();
+	
 	/**
 	 * Tells whether a stone may be dragged or not by telling where it may be
 	 * dropped.
@@ -106,11 +128,6 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 	// MARK: - Properties
 
 	/**
-	 * We express stones on the pips as positive and negative numbers.
-	 */
-	private int[] pips;
-
-	/**
 	 * The delegate class that we use to communicate with the outter world.
 	 */
 	private BoardViewDelegate delegate;
@@ -141,8 +158,7 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 
 	// MARK: - Constructor
 
-	public BoardView(BoardViewDelegate delegate, int[] pips) {
-		this.pips = pips;
+	public BoardView(BoardViewDelegate delegate) {
 		this.delegate = delegate;
 
 		this.mouse = this.getMousePosition();
@@ -192,11 +208,11 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 		for (int i = 0; i < 24; i++) {
 			this.paintPip(g, i);
 
-			int stones = this.pips[i];
+			int stones = this.delegate.board()[i];
 			Color color = this.getStoneColor(stones);
 
 			// Get the number of stones and account for the dragging.
-			int checkers = Math.abs(this.pips[i]);
+			int checkers = Math.abs(this.delegate.board()[i]);
 			if (this.dragged != null && this.dragged == i)
 				checkers--;
 
@@ -523,7 +539,7 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 		int size = this.getStoneSize() / 2;
 		
 		// Calculate the position of the next checker.
-		int stone = Math.abs(this.pips[pip]);
+		int stone = Math.abs(this.delegate.board()[pip]);
 		if (this.dragged != null && this.dragged == pip)
 			stone -= this.direction;
 
@@ -551,7 +567,7 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 		int index = -1;
 
 		for (int i = 0; i < 24; i++) {
-			int stones = Math.abs(this.pips[i]);
+			int stones = Math.abs(this.delegate.board()[i]);
 
 			for (int j = 0; j < stones; j++) {
 				Point coord = this.getStonePosition(i, j);
@@ -569,7 +585,9 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 			this.dragged = index;
 			this.mouse = e.getPoint();
 			this.drops = this.delegate.draggable(index);
-			this.direction = this.pips[index] / Math.abs(this.pips[index]);
+			
+			int stones = this.delegate.board()[index];
+			this.direction = stones / Math.abs(stones);
 		}
 
 		// Rerender the screen.
