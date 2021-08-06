@@ -1,3 +1,5 @@
+package view;
+
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -7,99 +9,13 @@ import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.swing.*;
-
-/**
- * @author maticzavadlal
- * 
- *         The board size should follow dimensions 4/3.
- * 
- *         - https://www.bkgm.com/rgb/rgb.cgi?view+842 -
- *         https://www.getwoodworking.com/sites/5/documents/Backgammon.pdf
- *
- */
+import javax.swing.JPanel;
 
 @SuppressWarnings("serial")
-public class View extends JFrame implements BoardViewDelegate {
-
-	public static void main(String[] args) {
-		View view = new View();
-		view.pack();
-		view.setVisible(true);
-	}
-	
-	private int[] board;
-
-	// MARK: - Constructor
-
-	public View() {
-		this.setDefaultCloseOperation(EXIT_ON_CLOSE);
-
-		this.board = new int[] {2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2 };
-
-		BoardView board = new BoardView(this);
-
-		this.add(board);
-		this.setPreferredSize(board.getPreferredSize());
-	}
-
-	@Override
-	public Set<Integer> draggable(int start) {
-		Set<Integer> drops = new HashSet<Integer>();
-		
-		for (int i = 0; i < board.length; i++) {
-			int j = board[i];
-			if (j * board[start] >= 0) drops.add(i);
-			
-		}
-		
-		return drops;
-	}
-
-	@Override
-	public void onDragged(int start, int end) {
-		int direction = this.board[start] / Math.abs(this.board[start]);
-		
-		this.board[start] -= direction;
-		this.board[end] += direction;
-	}
-	
-	public int[] board() {
-		return this.board;
-	}
-}
-
-interface BoardViewDelegate {
-	/**
-	 * Returns the current state on the board.
-	 * @return
-	 */
-	int[] board();
-	
-	/**
-	 * Tells whether a stone may be dragged or not by telling where it may be
-	 * dropped.
-	 * 
-	 * @param start
-	 * @return Returns drop locations.
-	 */
-	Set<Integer> draggable(int start);
-
-	/**
-	 * Event that's triggered when the stone has been dragged to a new location.
-	 * 
-	 * @param start
-	 * @param end
-	 */
-	void onDragged(int start, int end);
-}
-
-@SuppressWarnings("serial")
-class BoardView extends JPanel implements MouseListener, MouseMotionListener {
+public class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 	// Offset from the edge of the screen.
 	private static int PADDING = 15;
 
@@ -109,8 +25,8 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 	private static int BAR_WIDTH = 2 * BOARD_BORDER;
 	// How wide should a pip preferrably be.
 	private static int PREFERRED_PIP_WIDTH = 60;
-	// The offset of stone over the other stone.
-	private static int STONE_OFFSET = 5;
+	// The offset of checker over the other checker.
+	private static int CHECKER_OFFSET = 5;
 
 	// Board color settings.
 	private static Color BOARD_COLOR = new Color(117, 60, 24);
@@ -118,10 +34,10 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 	private static Color BOARD_EDGES = new Color(167, 100, 84);
 	private static Color WHITE_PIP = new Color(245, 223, 213);
 	private static Color BLACK_PIP = new Color(74, 47, 31);
-	private static Color WHITE_STONE = new Color(255, 232, 222);
-	private static Color BLACK_STONE = new Color(51, 46, 44);
-	private static Color STONE_EDGE = new Color(128, 116, 111);
-	private static Color STONE_BACKGROUND = new Color(233, 241, 223);
+	private static Color WHITE_CHECKER = new Color(255, 232, 222);
+	private static Color BLACK_CHECKER = new Color(51, 46, 44);
+	private static Color CHECKER_EDGE = new Color(128, 116, 111);
+	private static Color CHECKER_BACKGROUND = new Color(233, 241, 223);
 	private static Color DROP_COLOR = Color.GRAY;
 	private static Color TARGET_COLOR = Color.BLACK;
 
@@ -135,11 +51,11 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 	// MARK: - State
 
 	/**
-	 * The stone that is being dragged.
+	 * The checker that is being dragged.
 	 */
 	private Integer dragged;
 	/**
-	 * Tells what kind of stone we are dragging.
+	 * Tells what kind of checker we are dragging.
 	 */
 	private int direction;
 	/**
@@ -147,11 +63,11 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 	 */
 	private Point mouse;
 	/**
-	 * An array or pip indexes where the dragged stone may be dropped.
+	 * An array or pip indexes where the dragged checker may be dropped.
 	 */
 	private Set<Integer> drops;
 	/**
-	 * The pip that we may want to drop the stone on. You may assume that it is a
+	 * The pip that we may want to drop the checker on. You may assume that it is a
 	 * pip that is also in drops variable.
 	 */
 	private Integer target;
@@ -202,25 +118,28 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 
 		// ----------------------------------------------
 
-		int size = this.getStoneSize();
+		int size = this.getCheckerSize();
 
-		// Pain each of the pips and stones on it.
-		for (int i = 0; i < 24; i++) {
+		// Paint each of the pips.
+		for (int i = 1; i < 25; i++) {
 			this.paintPip(g, i);
+		}
+		
+		// Paint checkers.
+		for (int i = 0; i < 26; i++) {
+			int checkers = this.delegate.board()[i];
+			Color color = this.getCheckerColor(checkers);
 
-			int stones = this.delegate.board()[i];
-			Color color = this.getStoneColor(stones);
-
-			// Get the number of stones and account for the dragging.
-			int checkers = Math.abs(this.delegate.board()[i]);
+			// Get the number of checkers and account for the dragging.
 			if (this.dragged != null && this.dragged == i)
-				checkers--;
+				checkers -= this.direction;
 
-			for (int j = 0; j < checkers; j++) {
-				Point coord = this.getStonePosition(i, j);
-				this.paintStone(g, coord.x, coord.y, size / 2, color);
+			for (int j = 0; j < Math.abs(checkers); j++) {
+				Point coord = this.getCheckerPosition(i, j);
+				this.paintChecker(g, coord.x, coord.y, size / 2, color);
 			}
 		}
+
 
 		// ----------------------------------------------
 
@@ -232,10 +151,10 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 			}
 		}
 
-		// Paint the dragged stone.
+		// Paint the dragged checker.
 		if (this.dragged != null) {
-			Color color = this.getStoneColor(this.direction);
-			this.paintStone(g, this.mouse.x, this.mouse.y, size / 2, color);
+			Color color = this.getCheckerColor(this.direction);
+			this.paintChecker(g, this.mouse.x, this.mouse.y, size / 2, color);
 		}
 	}
 
@@ -300,28 +219,12 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 		int x3 = base.x;
 		int y3 = 0;
 
-		// bottom side of the board
-		if (0 <= index && index < 12) {
-
-			if (odd) {
-				y3 = base.y - (4 * this.getPipHeight() / 5);
-				g.setColor(WHITE_PIP);
-			} else {
-				y3 = base.y - this.getPipHeight();
-				g.setColor(BLACK_PIP);
-			}
-
-		}
-
-		// top side of the board
-		if (12 <= index && index < 24) {
-			if (odd) {
-				y3 = base.y + this.getPipHeight();
-				g.setColor(BLACK_PIP);
-			} else {
-				y3 = base.y + (4 * this.getPipHeight() / 5);
-				g.setColor(WHITE_PIP);
-			}
+		if (odd) {
+			y3 = base.y + this.getPipOrientation(index) * this.getPipHeight();
+			g.setColor(BLACK_PIP);
+		} else {
+			y3 = base.y + this.getPipOrientation(index) * (4 * this.getPipHeight() / 5);
+			g.setColor(WHITE_PIP);
 		}
 
 		// Each pip has an internal color and a light shading over the border.
@@ -342,37 +245,82 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 		int height = this.getHeight();
 
 		/**
-		 * We use modulo indexes to calculate the relative position of the stone in a
+		 * We use modulo indexes to calculate the relative position of the checker in a
 		 * given group.
 		 * 
 		 * - n tells the position in a single block of six pips - i tells relative
 		 * position on a given side of the board
 		 */
-		int n = index % 6;
-		int i = index % 12;
+		int n = (index - 1) % 6;
+		int i = (index - 1) % 12;
 
 		int x = 0, y = 0;
 
+		// black bar
+		if (index == 0) {
+			x = width / 2;
+			y = height / 2 + BOARD_BORDER / 3;
+		}
+
 		// bottom
-		if (0 <= index && index < 12) {
+		if (1 <= index && index < 13) {
 			y = height - BOARD_BORDER;
+
+			// left
+			if (0 <= i && i < 6) {
+				x = width - BOARD_BORDER - (1 + 2 * n) * this.getPipWidth() / 2;
+			}
+			// right
+			if (6 <= i && i < 12) {
+				x = BOARD_BORDER + (11 - 2 * n) * this.getPipWidth() / 2;
+			}
 		}
 
 		// top
-		if (12 <= index && index < 24) {
+		if (13 <= index && index < 25) {
 			y = BOARD_BORDER;
+
+			// left
+			if (0 <= i && i < 6) {
+				x = BOARD_BORDER + (1 + 2 * n) * this.getPipWidth() / 2;
+			}
+			// right
+			if (6 <= i && i < 12) {
+				x = width - BOARD_BORDER - (11 - 2 * n) * this.getPipWidth() / 2;
+			}
 		}
 
-		// left
-		if (0 <= i && i < 6) {
-			x = BOARD_BORDER + (1 + 2 * n) * this.getPipWidth() / 2;
-		}
-		// right
-		if (6 <= i && i < 12) {
-			x = width - BOARD_BORDER - (11 - 2 * n) * this.getPipWidth() / 2;
+		// white bar
+		if (index == 25) {
+			x = width / 2;
+			y = height / 2 - BOARD_BORDER / 3;
 		}
 
 		return new Point(x, y);
+	}
+
+	/**
+	 * Tells the direction of the pip based on the side of the board it is on.
+	 * 
+	 * @param index
+	 * @return
+	 */
+	private int getPipOrientation(int index) {
+
+		if (1 <= index && index < 13)
+			return -1;
+
+		if (index <= 13 && index < 25)
+			return 1;
+
+		// bar
+		if (index == 0)
+			return 1;
+
+		if (index == 25)
+			return -1;
+
+		return 1;
 	}
 
 	/**
@@ -400,53 +348,28 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 	}
 
 	/**
-	 * Returns the position of the stone on the board given the index of the pip and
-	 * the stone position.
+	 * Returns the position of the checker on the board given the index of the pip
+	 * and the checker position.
 	 * 
 	 * @param index
-	 * @param stone
+	 * @param checker
 	 * @return
 	 */
-	private Point getStonePosition(int index, int stone) {
-		int height = this.getHeight();
-		int width = this.getWidth();
-
-		// Calculate the size of each stone and the number of stones in each row.
-		int size = this.getStoneSize();
+	private Point getCheckerPosition(int index, int checker) {
+		// Calculate the size of each checker and the number of checkers in each row.
+		int size = this.getCheckerSize();
 		int row = this.getPipHeight() / size;
 
-		// Direction tells how we should add next stones to the pip.
-		int direction = 0;
-		int x = 0, y = 0;
+		// Direction tells how we should add next checkers to the pip.
+		int direction = this.getPipOrientation(index);
+		Point base = this.getPipBase(index);
 
-		// bottom side of the board
-		if (0 <= index && index < 12) {
-			y = height - BOARD_BORDER - size / 2;
-			direction = -1;
-		}
-
-		// top side of the board
-		if (12 <= index && index < 24) {
-			y = BOARD_BORDER + size / 2;
-			direction = 1;
-		}
-
-		int position = index % 12;
-		int i = index % 6;
-
-		// left side of the board
-		if (0 <= position && position < 6) {
-			x = BOARD_BORDER + (2 * i + 1) * this.getPipWidth() / 2;
-		}
-
-		// right side of the board
-		if (6 <= position && position < 12) {
-			x = width - BOARD_BORDER - (11 - 2 * i) * this.getPipWidth() / 2;
-		}
+		int x = base.x;
+		int y = base.y + this.getPipOrientation(index) * (size / 2);
 
 		// Coordinates calculation.
-		int offset = (stone / row) * STONE_OFFSET;
-		int margin = (stone % row) * size;
+		int offset = (checker / row) * CHECKER_OFFSET;
+		int margin = (checker % row) * size;
 		int sx = x;
 		int sy = y + direction * (margin + offset);
 
@@ -454,36 +377,36 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 	}
 
 	/**
-	 * Returns the size of the stone based on the size of the board.
+	 * Returns the size of the checker based on the size of the board.
 	 * 
 	 * @return
 	 */
-	private int getStoneSize() {
+	private int getCheckerSize() {
 		return this.getPipWidth() * 4 / 5;
 	}
 
 	/**
-	 * Returns the color of a stone on a given pip.
+	 * Returns the color of a checker on a given pip.
 	 * 
 	 * @param pip
 	 * @return
 	 */
-	private Color getStoneColor(int stones) {
-		Color color = WHITE_STONE;
-		if (stones > 0)
-			color = BLACK_STONE;
+	private Color getCheckerColor(int checkers) {
+		Color color = WHITE_CHECKER;
+		if (checkers > 0)
+			color = BLACK_CHECKER;
 
 		return color;
 	}
 
 	/**
-	 * Paints a stone at a given location and a given radius.
+	 * Paints a checker at a given location and a given radius.
 	 */
-	private void paintStone(Graphics g, int x, int y, int r, Color color) {
-		// We start by drawing the outer and inner edges of the stone.
+	private void paintChecker(Graphics g, int x, int y, int r, Color color) {
+		// We start by drawing the outer and inner edges of the checker.
 		g.setColor(color);
 		g.fillOval(x - r, y - r, 2 * r, 2 * r);
-		g.setColor(STONE_EDGE);
+		g.setColor(CHECKER_EDGE);
 		g.drawOval(x - r, y - r, 2 * r, 2 * r);
 
 		/**
@@ -497,7 +420,7 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 		double p = (double) r * 0.8;
 		double offset = 2 * Math.PI / (colors.length);
 
-		g.setColor(STONE_BACKGROUND);
+		g.setColor(CHECKER_BACKGROUND);
 		g.fillOval(x - (int) p, y - (int) p, 2 * (int) p, 2 * (int) p);
 
 		for (int c = 0; c < colors.length; c++) {
@@ -530,20 +453,20 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 	}
 
 	/**
-	 * Paints a possible target where the user may drop the stone.
+	 * Paints a possible target where the user may drop the checker.
 	 * 
 	 * @param pip
 	 * @param targeted
 	 */
 	private void paintDrop(Graphics g, int pip, boolean targeted) {
-		int size = this.getStoneSize() / 2;
-		
-		// Calculate the position of the next checker.
-		int stone = Math.abs(this.delegate.board()[pip]);
-		if (this.dragged != null && this.dragged == pip)
-			stone -= this.direction;
+		int size = this.getCheckerSize() / 2;
 
-		Point base = this.getStonePosition(pip, stone);
+		// Calculate the position of the next checker.
+		int checker = Math.abs(this.delegate.board()[pip]);
+		if (this.dragged != null && this.dragged == pip)
+			checker--;
+
+		Point base = this.getCheckerPosition(pip, checker);
 
 		// Draw the target.
 		g.setColor(DROP_COLOR);
@@ -561,16 +484,16 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 		int y = e.getY();
 
 //		System.out.println("x:" + x + ", y:" + y);
-		int size = this.getStoneSize();
+		int size = this.getCheckerSize();
 
-		// Find the index of the pip of the clicked stone.
+		// Find the index of the pip of the clicked checker.
 		int index = -1;
 
-		for (int i = 0; i < 24; i++) {
-			int stones = Math.abs(this.delegate.board()[i]);
+		for (int i = 0; i < 26; i++) {
+			int checkers = Math.abs(this.delegate.board()[i]);
 
-			for (int j = 0; j < stones; j++) {
-				Point coord = this.getStonePosition(i, j);
+			for (int j = 0; j < checkers; j++) {
+				Point coord = this.getCheckerPosition(i, j);
 //				System.out.println("(" + i + ", " + j + "): " + coord.x + ", " + coord.y);
 
 				double diff = Math.sqrt(Math.pow(x - coord.x, 2) + Math.pow(y - coord.y, 2));
@@ -580,14 +503,14 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 			}
 		}
 
-		// Makes sure we actually clicked on a stone.
+		// Makes sure we actually clicked on a checker.
 		if (index >= 0) {
 			this.dragged = index;
 			this.mouse = e.getPoint();
 			this.drops = this.delegate.draggable(index);
-			
-			int stones = this.delegate.board()[index];
-			this.direction = stones / Math.abs(stones);
+
+			int checkers = this.delegate.board()[index];
+			this.direction = checkers / Math.abs(checkers);
 		}
 
 		// Rerender the screen.
@@ -618,11 +541,6 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 	}
 
 	@Override
-	public void mouseMoved(MouseEvent e) {
-
-	}
-
-	@Override
 	public void mouseDragged(MouseEvent e) {
 		this.mouse = e.getPoint();
 
@@ -636,7 +554,7 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 		double closest = width + height;
 
 		// Find the closest pip to the mouse.
-		for (int i = 0; i < 24; i++) {
+		for (int i = 1; i < 25; i++) {
 			Point coord = this.getPipBase(i);
 //				System.out.println("(" + i + ", " + j + "): " + coord.x + ", " + coord.y);
 
@@ -663,6 +581,11 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 	}
 
 	//
+
+	@Override
+	public void mouseMoved(MouseEvent e) {
+
+	}
 
 	@Override
 	public void mouseClicked(MouseEvent e) {
