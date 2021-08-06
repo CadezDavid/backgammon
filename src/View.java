@@ -37,7 +37,7 @@ public class View extends JFrame implements BoardViewDelegate {
 	public View() {
 		this.setDefaultCloseOperation(EXIT_ON_CLOSE);
 
-		int[] pips = { 12, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2 };
+		int[] pips = {2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2 };
 
 		BoardView board = new BoardView(this, pips);
 
@@ -50,22 +50,23 @@ public class View extends JFrame implements BoardViewDelegate {
 		Integer[] pips = new Integer[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
 		return new HashSet<Integer>(Arrays.asList(pips));
 	}
-	
+
 	@Override
 	public void onDragged(int start, int end) {
-		
+
 	}
 }
 
 interface BoardViewDelegate {
 	/**
-	 * Tells whether a stone may be dragged or not by telling where it may be dropped.
+	 * Tells whether a stone may be dragged or not by telling where it may be
+	 * dropped.
 	 * 
 	 * @param start
 	 * @return Returns drop locations.
 	 */
 	Set<Integer> draggable(int start);
-	
+
 	/**
 	 * Event that's triggered when the stone has been dragged to a new location.
 	 * 
@@ -196,8 +197,9 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 
 			// Get the number of stones and account for the dragging.
 			int checkers = Math.abs(this.pips[i]);
-			if (this.dragged != null && this.dragged == i) checkers -= this.direction;
-			
+			if (this.dragged != null && this.dragged == i)
+				checkers--;
+
 			for (int j = 0; j < checkers; j++) {
 				Point coord = this.getStonePosition(i, j);
 				this.paintStone(g, coord.x, coord.y, size / 2, color);
@@ -452,7 +454,7 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 	 */
 	private Color getStoneColor(int stones) {
 		Color color = WHITE_STONE;
-		if (stones < 0)
+		if (stones > 0)
 			color = BLACK_STONE;
 
 		return color;
@@ -493,10 +495,8 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 				double fi = step * i;
 				double pr = Math.sin(leaves * fi + offset * c) * p;
 
-				Point2D point = new Point2D(fi, pr);
-
-				int px = x + point.getX();
-				int py = y + point.getY();
+				int px = x + (int) (Math.cos(fi) * pr);
+				int py = y + (int) (Math.sin(fi) * pr);
 
 				xs[i] = px;
 				ys[i] = py;
@@ -521,7 +521,11 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 	 */
 	private void paintDrop(Graphics g, int pip, boolean targeted) {
 		int size = this.getStoneSize() / 2;
+		
+		// Calculate the position of the next checker.
 		int stone = Math.abs(this.pips[pip]);
+		if (this.dragged != null && this.dragged == pip)
+			stone -= this.direction;
 
 		Point base = this.getStonePosition(pip, stone);
 
@@ -543,9 +547,9 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 //		System.out.println("x:" + x + ", y:" + y);
 		int size = this.getStoneSize();
 
-		int index = -1, n = 0;
+		// Find the index of the pip of the clicked stone.
+		int index = -1;
 
-		// Paint each of the pips and stones on it.
 		for (int i = 0; i < 24; i++) {
 			int stones = Math.abs(this.pips[i]);
 
@@ -555,10 +559,8 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 
 				double diff = Math.sqrt(Math.pow(x - coord.x, 2) + Math.pow(y - coord.y, 2));
 
-				if (diff <= size) {
+				if (diff <= size)
 					index = i;
-					n = j;
-				}
 			}
 		}
 
@@ -576,19 +578,21 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 
 	@Override
 	public void mouseReleased(MouseEvent e) {
-		if (this.dragged == null) return;
-		
+		if (this.dragged == null)
+			return;
+
 		// Calculate the movement of the checker.
 		int start = this.dragged;
 		int end = start;
-		
-		if (this.target != null) end = this.target;
-		
+
+		if (this.target != null)
+			end = this.target;
+
 		// Reset dragging values.
 		this.dragged = null;
 		this.drops = new HashSet<Integer>();
 		this.direction = 0;
-		
+
 		// Trigger event.
 		this.delegate.onDragged(start, end);
 
@@ -632,9 +636,11 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 			}
 		}
 
-		if (this.drops.contains(pip)) this.target = pip;
-		else this.target = null;
-		
+		if (this.drops.contains(pip))
+			this.target = pip;
+		else
+			this.target = null;
+
 		this.repaint();
 	}
 
@@ -650,42 +656,5 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 
 	@Override
 	public void mouseExited(MouseEvent e) {
-	}
-}
-
-// MARK: - Utilities
-
-class Point2D {
-	private double x;
-	private double y;
-
-	// MARK: - Constructor
-
-	Point2D(int x, int y) {
-		this.x = x;
-		this.y = y;
-	}
-
-	Point2D(double fi, double r) {
-		this.x = Math.cos(fi) * r;
-		this.y = Math.sin(fi) * r;
-	}
-
-	// MARK: - Accessors
-
-	int getX() {
-		return (int) this.x;
-	}
-
-	int getY() {
-		return (int) this.y;
-	}
-
-	double getR() {
-		return Math.sqrt(x * x + y * y);
-	}
-
-	double getFi() {
-		return Math.atan(y / x);
 	}
 }
