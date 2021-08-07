@@ -21,7 +21,7 @@ class Model {
         this.white = new Player();
         this.black = new Player();
 
-        this.game = null;
+        this.game = new Game();
     }
 
     public Model(String nameBP, String nameWP, Player.Type typeBP, Player.Type typeWP) {
@@ -62,6 +62,16 @@ class Game {
     private int[] pips;
 
     /**
+     * Currently active dice.
+     */
+    private int[] dice;
+
+    /**
+     * Counts the turns in the game. Turn is every player's move, not one round.
+     */
+    private int turn;
+
+    /**
      * Tells the phase that the game is in.
      */
     private State state;
@@ -87,14 +97,19 @@ class Game {
     // MARK: - Constructors
 
     public Game() {
-        pips = new int[]{0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2, 0};
+        this.pips = new int[]{0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2, 0};
         this.state = State.STARTING;
+        this.turn = 0;
+        this.dice = new int[] {};
+
+        this.roll();
     }
 
     // MARK: - Accessors
 
     /**
      * Returns the current board.
+     *
      * @return
      */
     public int[] getBoard() {
@@ -131,24 +146,99 @@ class Game {
 //    }
 
     /**
+     * Tells whether a player can make a move.
+     *
+     * @param start
+     * @param end
+     * @return
+     */
+    private boolean isMoveValid(int start, int end) {
+        List<Integer> bar = Arrays.asList(0, 25);
+        // Number of checkers locked on teh bar.
+        int locked = this.pips[0] + this.pips[25];
+
+        // Check if we are pulling from the bar.
+        if (locked > 0 && !bar.contains(start)) return false;
+        if (locked == 0 && bar.contains(start)) return false;
+
+        // Check if we are pulling off the board.
+        if (end < 0 || end > 25) return true;
+
+        // Check that direction is respected.
+        return this.pips[start] * this.pips[end] >= 0;
+    }
+
+    /**
      * Tells where the player may move the checkers from the starting point.
      *
      * @param start
      * @return
      */
     public Set<Integer> getMoves(int start) {
-        int[] dies = new int[] {3, 5};
+        int direction = this.getPipDirection(start);
 
         HashSet<Integer> moves = new HashSet<Integer>();
 
-        for(int die: dies) {
-            for (int i = 0; i < this.pips.length; i++) {
-                if (this.pips[start] * this.pips[i] >= 0) {
+        /**
+         * We iterate over all dice combinations and check for each
+         * combination whether we could make a reasonable move with it.
+         */
+        for (int i = 0; i < this.dice.length; i++) {
+            int end = start + this.dice[i];
+            int[] board = this.pips.clone();
 
+            // Check that we are dropping checker on our stones.
+            if (direction * board[end] < 0) continue;
+
+            // Check if there's only one die left.
+            if (this.dice.length == 1 && this.isMoveValid(start, end)) {
+                moves.add(end);
+                continue;
+            }
+
+            // Otherwise, make the first move and see if we can make it out.
+            board[start] -= direction;
+            board[end] += direction;
+
+            second:
+            for (int j = 0; j < this.dice.length; j++) {
+                // We can't repeat the same die.
+                if (j == i) continue;
+
+                // We check for each pip with the same orientation whether we can make
+                // a move for remaining number of points.
+                for (int pip = 0; pip < board.length; pip++) {
+                    // Skip pips that are not ours.
+                    if (direction * board[pip] < 0) continue;
+
+                    // Check if the move is valid.
+                    if (this.isMoveValid(pip, pip + this.dice[j])) {
+                        moves.add(end);
+                        break second;
+                    }
                 }
             }
         }
+
         return moves;
+    }
+
+    /**
+     * Returns the direction of the pip.
+     *
+     * @param index
+     * @return
+     */
+    private int getPipDirection(int index) {
+        return this.pips[index] / Math.abs(this.pips[index]);
+    }
+
+    /**
+     * Rolls the dice.
+     * @return
+     */
+    private void roll() {
+        this.dice = new int[] { (int) Math.ceil(Math.random() * 6), (int) Math.ceil(Math.random() * 6) };
     }
 
     /**
@@ -164,6 +254,12 @@ class Game {
         this.pips[start] -= direction;
         this.pips[end] += direction;
 
+        // Calculate rounds.
+        this.turn++;
+
+        if (turn % 2 == 0) {
+            this.roll();
+        }
 
         // Throw the dice if necessary.
 
@@ -180,47 +276,6 @@ class Game {
 //        }
     }
 
-    /**
-     * Tells whether a player can make a move.
-     * @param start
-     * @param end
-     * @return
-     */
-//    private boolean isMoveValid(int start, int end) {
-//        int c = (checker == Checker.BLACK ? 1 : -1);
-//
-//        // if player is move from the bar
-//        if (move.getStartPip() == 0 || move.getStartPip() == 25) {
-//            // if checkers on the board make sense
-//            if ((pips[move.getStartPip()] > 0) && (c * pips[move.getEndPip()] > -2)) {
-//                return false;
-//            }
-//
-//            // if player has no checkers on the bar
-//            if (pips[(25 - 25 * c) / 2] == 0) {
-//                return false;
-//            }
-//        }
-//        // usual case
-//        else {
-//            // if checkers on the board make sense
-//            if ((c * pips[move.getStartPip()] > 0) && (c * pips[move.getEndPip()] > -2)) {
-//                return false;
-//            }
-//
-//            // if player has checkers on the bar
-//            if (pips[(25 - 25 * c) / 2] != 0) {
-//                return false;
-//            }
-//        }
-//
-//        // if the direction of moving is correct
-//        if ((move.getEndPip() - move.getStartPip()) * c <= 0) {
-//            return false;
-//        }
-//
-//        return true;
-//    }
 
 //    private boolean canBearOff(Checker checker) {
 //        int c = (checker == Checker.BLACK ? 0 : 7);
