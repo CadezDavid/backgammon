@@ -1,3 +1,8 @@
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class Model {
 
     private Board board;
@@ -48,6 +53,53 @@ class Board {
         pips = new int[] { 0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2, 0 };
     }
 
+    public List<LinkedList<Move>> getAllPlays(Checker checker, int[] dice) {
+        List<LinkedList<Move>> plays = new ArrayList<LinkedList<Move>>();
+
+        for (int i = 0; i < dice.length; i++) {
+            List<Move> moves = getValidMoves(checker, dice[i]);
+            int[] clone = new int[dice.length - 1];
+            for (int j = 0; j < dice.length && j != i; j++) {
+                clone[j - (j < i ? 1 : 0)] = dice[i];
+            }
+            for (LinkedList<Move> play : getAllPlays(checker, clone)) {
+                for (Move move : moves) {
+                    play.push(move);
+                    plays.add(play);
+                }
+            }
+        }
+
+        // removes duplicates and ensures all plays will be the same length
+        List<LinkedList<Move>> playsNoDup = plays.stream().distinct().collect(Collectors.toList());
+        playsNoDup.remove(new LinkedList<Move>());
+        if (playsNoDup.isEmpty()) {
+            playsNoDup.add(new LinkedList<Move>());
+        }
+        return playsNoDup;
+    }
+
+    public List<Move> getValidMoves(Checker checker, int die) {
+        int c = (checker == Checker.BLACK ? 1 : -1);
+        List<Move> moves = new ArrayList<>();
+
+        if (c * pips[(25 - 25 * c) / 2] > 0) {
+            Move move = new Move((25 - 25 * c) / 2, (25 - 25 * c) / 2 + c * die);
+            if (isMoveValid(checker, move)) {
+                moves.add(move);
+            } else {
+            }
+        } else {
+            for (int i = 1; i < 25; i++) {
+                Move move = new Move(i, i + c * die);
+                if (isMoveValid(checker, move)) {
+                    moves.add(move);
+                }
+            }
+        }
+        return moves;
+    }
+
     public void move(Checker checker, Move move) {
         int c = (checker == Checker.BLACK ? 1 : -1);
 
@@ -64,7 +116,7 @@ class Board {
         }
     }
 
-    public boolean isMoveValid(Checker checker, Move move) {
+    private boolean isMoveValid(Checker checker, Move move) {
         int c = (checker == Checker.BLACK ? 1 : -1);
 
         // if player is move from the bar
@@ -100,7 +152,7 @@ class Board {
         return true;
     }
 
-    public boolean canBearOff(Checker checker) {
+    private boolean canBearOff(Checker checker) {
         int c = (checker == Checker.BLACK ? 0 : 7);
 
         for (int i = c; i < 19 + c; i++) {
