@@ -1,0 +1,4 @@
+interface SettingsViewDelegate {}
+
+class SettingsView {
+}
