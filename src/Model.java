@@ -164,7 +164,7 @@ class Game {
         // Number of checkers locked on teh bar.
         int locked = board[0] + board[25];
 
-        // Check if we are pulling from the bar.
+        // Check if we are pulling from the bar and if we need to.
         if (locked > 0 && !bar.contains(start)) return false;
         if (locked == 0 && bar.contains(start)) return false;
 
@@ -200,7 +200,9 @@ class Game {
             int[] board = this.pips.clone();
 
             // Check the bounds.
-            if (end < 1 || 25 < end) continue;
+            if (end < 0) end = 0;
+            if (end > 26) end = 26;
+//            if (end < 0 || 26 < end) continue;
 
             // Check that we are dropping checker on our stones.
             if (direction * board[end] < 0) continue;
@@ -253,6 +255,8 @@ class Game {
         for (int i = 0; i < 2; i++) {
             this.dice.add((int) Math.ceil(Math.random() * 6));
         }
+
+        System.out.println(this.dice);
     }
 
     /**
