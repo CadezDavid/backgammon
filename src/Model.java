@@ -48,17 +48,17 @@ class Model {
 class Game {
 
     /**
-     * Pips is a 26-items long array. Even though there are only 24 pips in
+     * Points is a 26-items long array. Even though there are only 24 points in
      * the board, we use the first and the last one as a bar. Positive values
      * of items represent black checkers while negative ones represent whites.
      * <p>
      * White is trying to get all checkers to the left (i.e. towards 1) and
      * black is trying to get them all to the right (i.e. to 24).
      * <p>
-     * 0th pip represents black player's bar, where value n means n checkers on bar,
-     * and 25th pip represents white player's bar where value -n means n checkers on bar.
+     * 0th point represents black player's bar, where value n means n checkers on bar,
+     * and 25th point represents white player's bar where value -n means n checkers on bar.
      */
-    private int[] pips;
+    private int[] points;
 
     /**
      * Currently active dice.
@@ -73,7 +73,7 @@ class Game {
     /**
      * Tells the order of the turns by direction (i.e. positive negative).
      */
-    private int[] turns;
+    private final int[] turns;
 
     /**
      * Tells the phase that the game is in.
@@ -101,7 +101,7 @@ class Game {
     // MARK: - Constructors
 
     public Game() {
-        this.pips = new int[]{0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2, 0};
+        this.points = new int[]{0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -1, -1};
         this.state = State.STARTING;
         this.round = 0;
         this.turns = new int[]{-1, 1};
@@ -116,7 +116,7 @@ class Game {
      * Returns the current board.
      */
     public int[] getBoard() {
-        return this.pips;
+        return this.points;
     }
 
     /**
@@ -126,7 +126,7 @@ class Game {
         int[] dice = new int[this.dice.size()];
 
         for (int i = 0; i < this.dice.size(); i++) {
-           dice[i] = this.dice.get(i);
+            dice[i] = this.dice.get(i);
         }
 
         return dice;
@@ -137,24 +137,19 @@ class Game {
 
 
     /**
-     * Returns the direction of the pip.
-     *
-     * @param index
-     * @return
+     * Returns the direction of the point.
      */
-    private int getPipDirection(int[] board, int index) {
+    private static int getPointDirection(int[] board, int index) {
         return board[index] / Math.abs(board[index]);
     }
 
-    private int getPipDirection(int index) {
-        return this.getPipDirection(this.pips, index);
+    private int getPointDirection(int index) {
+        return getPointDirection(this.points, index);
     }
 
 
     /**
      * Tells the direction of the player that is currently playing.
-     *
-     * @return
      */
     private int getPlayer() {
         return this.turns[this.round % 2];
@@ -162,43 +157,37 @@ class Game {
 
     /**
      * Tells whether a player can make a move.
-     *
-     * @param start
-     * @param end
-     * @return
      */
-    private boolean isMoveValid(int[] board, int turn, int start, int end) {
+    private static boolean isMoveValid(int[] board, int direction, int start, int end) {
         // Check that we are taking from the right pile.
-        if (this.getPipDirection(board, start) * turn < 0) return false;
+        if (getPointDirection(board, start) * direction < 0) return false;
 
-        List<Integer> bar = Arrays.asList(0, 25);
-        // Number of checkers locked on teh bar.
-        int locked = board[0] + board[25];
+        // Number of checkers locked on the bar.
+        int bar = (1 - direction) / 2 * 25;
+        int locked = Math.abs(board[bar]);
 
         // Check if we are pulling from the bar and if we need to.
-        if (locked > 0 && !bar.contains(start)) return false;
-        if (locked == 0 && bar.contains(start)) return false;
+        if (locked > 0 && bar != start) return false;
 
         // Check if we are pulling off the board.
         if (end < 0 || end > 25) return true;
+
+        // We can beat the other player.
+        if (board[end] * direction < 0 && Math.abs(board[end]) == 1) return true;
 
         // Check that direction is respected.
         return board[start] * board[end] >= 0;
     }
 
     private boolean isMoveValid(int start, int end) {
-        return this.isMoveValid(this.pips, this.getPlayer(), start, end);
+        return isMoveValid(this.points, this.getPlayer(), start, end);
     }
 
     /**
      * Tells where the player may move the checkers from the starting point.
-     *
-     * @param start
-     * @return
      */
     public Set<Integer> getMoves(int start) {
-        int player = this.turns[this.round % 2];
-        int direction = this.getPipDirection(start);
+        int direction = this.getPointDirection(start);
 
         HashSet<Integer> moves = new HashSet<Integer>();
 
@@ -208,43 +197,42 @@ class Game {
          */
         for (int i = 0; i < this.dice.size(); i++) {
             int end = start + this.dice.get(i) * direction;
-            int[] board = this.pips.clone();
+            int[] board = this.points.clone();
 
             // Check the bounds.
             if (end < 0) end = 0;
-            if (end > 26) end = 26;
-//            if (end < 0 || 26 < end) continue;
+            if (end > 25) end = 25;
 
-            // Check that we are dropping checker on our stones.
-            if (direction * board[end] < 0) continue;
+            // Check that we are dropping checker on our stones or beating the other player.
+            if (direction * board[end] < 0 && Math.abs(board[end]) > 1) continue;
+
+            // Make sure that moves is valid.
+            if (!this.isMoveValid(start, end)) continue;
 
             // Check if there's only one die left.
-            if (this.dice.size() == 1 && this.isMoveValid(start, end)) {
+            if (this.dice.size() == 1)  {
                 moves.add(end);
                 continue;
             }
 
             // Otherwise, make the first move and see if we can make it out.
-            board[start] -= direction;
-
-            if (1 < end && end < 25) {
-                board[end] += direction;
-            }
-
+            board = move(board, start, end);
 
             second:
             for (int j = 0; j < this.dice.size(); j++) {
                 // We can't repeat the same die.
                 if (j == i) continue;
 
-                // We check for each pip with the same orientation whether we can make
+                // We check for each point with the same orientation whether we can make
                 // a move for remaining number of points.
-                for (int pip = 0; pip < board.length; pip++) {
-                    // Skip pips that are not ours.
-                    if (direction * board[pip] <= 0) continue;
+                for (int point = 0; point < board.length; point++) {
+                    // Skip points that are not ours.
+                    if (direction * board[point] <= 0) continue;
+
+                    int player = this.getPlayer();
 
                     // Check if the move is valid.
-                    if (this.isMoveValid(board, player, pip, pip + this.dice.get(j) * direction)) {
+                    if (isMoveValid(board, player, point, point + this.dice.get(j) * direction)) {
                         moves.add(end);
                         break second;
                     }
@@ -257,8 +245,6 @@ class Game {
 
     /**
      * Rolls the dice.
-     *
-     * @return
      */
     private void roll() {
         this.dice = new ArrayList<Integer>();
@@ -271,86 +257,52 @@ class Game {
     }
 
     /**
-     * Performs a given move.
-     *
-     * @param start
-     * @param end
+     * Performs a given move and returns a board.
      */
-    public void move(int start, int end) {
+    public static int[] move(int[] board, int start, int end) {
+        // Make sure we are not writing to the original board.
+        board = board.clone();
+
         // Check that we are performing a move.
-        if (start == end) return;
+        if (start == end) return board;
 
-        int direction = this.getPipDirection(start);
+        // Figure out which checker are we trying to move.
+        int direction = getPointDirection(board, start);
 
-        // Update the board.
-        this.pips[start] -= direction;
-        this.pips[end] += direction;
+        // Remove the checker from the starting field.
+        board[start] -= direction;
+
+        // Check that we are still on the board when making a move.
+        if (1 < end && end < 25) {
+            // Regularly move the checker if we are not beating.
+            if (board[end] * direction >= 0) {
+                board[end] += direction;
+            } else {
+                // If it is white player's move, black should be beat and vice-versa.
+                // That is, when it's white, we should "add" one to the other player's
+                // bench.
+                board[(1 + direction) / 2 * 25] -= direction;
+                board[end] = direction;
+            }
+        }
+
+        return board;
+    }
+
+    // todo when overflowing!
+    public void move(int start, int end) {
+        this.points = move(this.points, start, end);
 
         // Update the dice.
         Integer die = Math.abs(end - start);
-
         this.dice.remove(die);
 
         // New turn.
         if (this.dice.size() == 0) {
-
             this.round++;
             this.roll();
         }
-
-        // Throw the dice if necessary.
-
-        // case in which the opposing player has been hit
-//        if (c * pips[move.getEndPip()] == -1) {
-//            pips[move.getStartPip()] -= c;
-//            pips[move.getEndPip()] = c;
-//            pips[(25 + 25 * c) / 2] -= c;
-//        }
-//        // usual case
-//        else {
-//            pips[move.getStartPip()] -= c;
-//            pips[move.getEndPip()] += c;
-//        }
     }
-
-
-//    private boolean canBearOff(Checker checker) {
-//        int c = (checker == Checker.BLACK ? 0 : 7);
-//
-//        for (int i = c; i < 19 + c; i++) {
-//            if (pips[i] * c > 0) {
-//                return false;
-//            }
-//        }
-//
-//        return true;
-//    }
-
-//    public List<LinkedList<Move>> getAllPlays(Checker checker, int[] dice) {
-//        List<LinkedList<Move>> plays = new ArrayList<LinkedList<Move>>();
-//
-//        for (int i = 0; i < dice.length; i++) {
-//            List<Move> moves = getValidMoves(checker, dice[i]);
-//            int[] clone = new int[dice.length - 1];
-//            for (int j = 0; j < dice.length && j != i; j++) {
-//                clone[j - (j < i ? 1 : 0)] = dice[i];
-//            }
-//            for (LinkedList<Move> play : getAllPlays(checker, clone)) {
-//                for (Move move : moves) {
-//                    play.push(move);
-//                    plays.add(play);
-//                }
-//            }
-//        }
-//
-//        // removes duplicates and ensures all plays will be the same length
-//        List<LinkedList<Move>> playsNoDup = plays.stream().distinct().collect(Collectors.toList());
-//        playsNoDup.remove(new LinkedList<Move>());
-//        if (playsNoDup.isEmpty()) {
-//            playsNoDup.add(new LinkedList<Move>());
-//        }
-//        return playsNoDup;
-//
 }
 
 /**
@@ -361,12 +313,12 @@ class Player {
     /**
      * Tells the name of the player that we display in the game.
      */
-    private String name;
+    private final String name;
 
     /**
      * Tells whether a player is a human or a computer.
      */
-    private Type type;
+    private final Type type;
 
     enum Type {
         COMPUTER, HUMAN
@@ -396,7 +348,4 @@ class Player {
 }
 
 
-enum Checker {
-    WHITE, BLACK
-}
 

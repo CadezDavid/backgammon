@@ -19,28 +19,19 @@ import javax.swing.JPanel;
 interface BoardViewDelegate {
     /**
      * Returns the current state on the board.
-     *
-     * @return
      */
     int[] board();
 
     /**
      * Tells whether a stone may be dragged or not by telling where it may be
      * dropped.
-     *
-     * @param start
-     * @return Returns drop locations.
      */
     Set<Integer> draggable(int start);
 
     /**
      * Event that's triggered when the stone has been dragged to a new location.
-     *
-     * @param start
-     * @param end
      */
     void onDragged(int start, int end);
-
     /**
      * Current dice.
      */
@@ -48,43 +39,42 @@ interface BoardViewDelegate {
 }
 
 
-@SuppressWarnings("serial")
 class BoardView extends JPanel implements MouseListener, MouseMotionListener {
     // Offset from the edge of the screen.
-    private static int PADDING = 75;
+    private static final int PADDING = 75;
 
     // Board padding or the border of the board.
-    private static int BOARD_BORDER = 30;
-    // The widht of the bar in the center.
-    private static int BAR_WIDTH = 2 * BOARD_BORDER;
-    // How wide should a pip preferably be.
-    private static int PREFERRED_PIP_WIDTH = 60;
+    private static final int BOARD_BORDER = 30;
+    // The width of the bar in the center.
+    private static final int BAR_WIDTH = 2 * BOARD_BORDER;
+    // How wide should a point preferably be.
+    private static final int PREFERRED_POINT_WIDTH = 60;
     // The offset of checker over the other checker.
-    private static int CHECKER_OFFSET = 5;
+    private static final int CHECKER_OFFSET = 5;
     // Number of checkers that each player has.
-    private static int CHECKERS = 15;
+    private static final int CHECKERS = 15;
 
     // Board color settings.
-    private static Color BOARD_COLOR = new Color(117, 60, 24);
-    private static Color BOARD_BACKGROUND = new Color(245, 126, 51);
-    private static Color BOARD_EDGES = new Color(167, 100, 84);
-    private static Color WHITE_PIP = new Color(245, 223, 213);
-    private static Color BLACK_PIP = new Color(74, 47, 31);
-    private static Color WHITE_CHECKER = new Color(255, 232, 222);
-    private static Color BLACK_CHECKER = new Color(51, 46, 44);
-    private static Color CHECKER_EDGE = new Color(128, 116, 111);
-    private static Color CHECKER_BACKGROUND = new Color(233, 241, 223);
-    private static Color DROP_COLOR = new Color(75, 75, 75);
-    private static Color TARGET_COLOR = new Color(0, 0, 0);
-    private static Color DIE_COLOR = new Color(240, 240, 240);
-    private static Color DOTS_COLOR = new Color(0, 0, 0);
+    private static final Color BOARD_COLOR = new Color(117, 60, 24);
+    private static final Color BOARD_BACKGROUND = new Color(245, 126, 51);
+    private static final Color BOARD_EDGES = new Color(167, 100, 84);
+    private static final Color WHITE_POINT = new Color(245, 223, 213);
+    private static final Color BLACK_POINT = new Color(74, 47, 31);
+    private static final Color WHITE_CHECKER = new Color(255, 232, 222);
+    private static final Color BLACK_CHECKER = new Color(51, 46, 44);
+    private static final Color CHECKER_EDGE = new Color(128, 116, 111);
+    private static final Color CHECKER_BACKGROUND = new Color(233, 241, 223);
+    private static final Color DROP_COLOR = new Color(75, 75, 75);
+    private static final Color TARGET_COLOR = new Color(0, 0, 0);
+    private static final Color DIE_COLOR = new Color(240, 240, 240);
+    private static final Color DOTS_COLOR = new Color(0, 0, 0);
 
     // MARK: - Properties
 
     /**
      * The delegate class that we use to communicate with the outter world.
      */
-    private BoardViewDelegate delegate;
+    private final BoardViewDelegate delegate;
 
     // MARK: - State
 
@@ -101,12 +91,12 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
      */
     private Point mouse;
     /**
-     * An array or pip indexes where the dragged checker may be dropped.
+     * An array or point indexes where the dragged checker may be dropped.
      */
     private Set<Integer> drops;
     /**
-     * The pip that we may want to drop the checker on. You may assume that it is a
-     * pip that is also in drops variable.
+     * The point that we may want to drop the checker on. You may assume that it is a
+     * point that is also in drops variable.
      */
     private Integer target;
 
@@ -130,7 +120,7 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
     @Override
     public Dimension getPreferredSize() {
         // Board
-        int boardWidth = 2 * BOARD_BORDER + BAR_WIDTH + 2 * 6 * PREFERRED_PIP_WIDTH;
+        int boardWidth = 2 * BOARD_BORDER + BAR_WIDTH + 2 * 6 * PREFERRED_POINT_WIDTH;
         int boardHeight = 3 * boardWidth / 4;
 
         // Screen
@@ -152,11 +142,11 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
         } else {
             // White is trying to get to 0 and black to 26.
             if (this.target == 0) {
-                this.setBackground(WHITE_PIP);
+                this.setBackground(WHITE_POINT);
             }
 
-            if (this.target == 26) {
-                this.setBackground(BLACK_PIP);
+            if (this.target == 25) {
+                this.setBackground(BLACK_POINT);
             }
         }
 
@@ -170,9 +160,9 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 
         int checkerSize = this.getCheckerSize();
 
-        // Paint each of the pips.
+        // Paint each of the points.
         for (int i = 1; i < 25; i++) {
-            this.paintPip(g, i);
+            this.paintPoint(g, i);
         }
 
         // Paint checkers.
@@ -204,18 +194,20 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
                 int x = center - (saved * checkerSize / 4) + i * checkerSize;
                 int y = ((1 - turn) / 2 * this.getHeight()) + (turn * PADDING / 2);
 
-                System.out.println(turn + ": " + x + "," + y);
                 this.paintChecker(g, x, y, checkerSize / 2, color);
             }
         }
 
-
         // ----------------------------------------------
 
-        // Paint the droppable pips and the target.
+        // Paint the droppable points and the target.
         if (this.drops != null) {
             for (Integer drop : drops) {
-                boolean targeted = this.target != null && drop.equals(this.target);
+                // We don't show markers on the bar as you can't move checker there.
+                if (drop == 0 || drop == 25) continue;
+
+                // Otherwise, we draw the marker.
+                boolean targeted = drop.equals(this.target);
                 this.paintDrop(g, drop, targeted);
             }
         }
@@ -225,7 +217,6 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
             Color color = this.getCheckerColor(this.direction);
             this.paintChecker(g, this.mouse.x, this.mouse.y, checkerSize / 2, color);
         }
-
 
         // ----------------------------------------------
 
@@ -278,11 +269,11 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
     }
 
     /**
-     * Draws a single pip on the board.
+     * Draws a single point on the board.
      */
-    private void paintPip(Graphics g, int index) {
+    private void paintPoint(Graphics g, int index) {
         /**
-         * The coordinates as named as shown in the picture regardless of the pip
+         * The coordinates as named as shown in the picture regardless of the point
          * orientation.
          *
          * @formatter:off
@@ -300,29 +291,29 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 
         /**
          * It's important to notice that the top part of the board isn't zero indexed.
-         * Because of that the top part has "inverted" odd and even pips.
+         * Because of that the top part has "inverted" odd and even points.
          */
         boolean odd = index % 2 == 1;
 
-        Point base = this.getPipBase(index);
+        Point base = this.getPointBase(index);
 
         // Set remaining points that depend on the already set ones.
-        int x1 = base.x - this.getPipWidth() / 2;
+        int x1 = base.x - this.getPointWidth() / 2;
         int y1 = base.y;
-        int x2 = base.x + this.getPipWidth() / 2;
+        int x2 = base.x + this.getPointWidth() / 2;
         int y2 = base.y;
         int x3 = base.x;
         int y3 = 0;
 
         if (odd) {
-            y3 = base.y + this.getPipOrientation(index) * this.getPipHeight();
-            g.setColor(BLACK_PIP);
+            y3 = base.y + this.getPointOrientation(index) * this.getPointHeight();
+            g.setColor(BLACK_POINT);
         } else {
-            y3 = base.y + this.getPipOrientation(index) * (4 * this.getPipHeight() / 5);
-            g.setColor(WHITE_PIP);
+            y3 = base.y + this.getPointOrientation(index) * (4 * this.getPointHeight() / 5);
+            g.setColor(WHITE_POINT);
         }
 
-        // Each pip has an internal color and a light shading over the border.
+        // Each point has an internal color and a light shading over the border.
         g.fillPolygon(new int[]{x1, x2, x3}, new int[]{y1, y2, y3}, 3);
 
         g.setColor(BOARD_EDGES);
@@ -330,9 +321,9 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
     }
 
     /**
-     * Returns where on the screen the pip should start.
+     * Returns where on the screen the point should start.
      */
-    private Point getPipBase(int index) {
+    private Point getPointBase(int index) {
         // Screen sizes
         int width = this.getWidth();
         int height = this.getHeight();
@@ -343,7 +334,7 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
          * We use modulo indexes to calculate the relative position of the checker in a
          * given group.
          *
-         * - n tells the position in a single block of six pips - i tells relative
+         * - n tells the position in a single block of six points - i tells relative
          * position on a given side of the board
          */
         int n = (index - 1) % 6;
@@ -363,11 +354,11 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 
             // left
             if (0 <= i && i < 6) {
-                x = width - margin - (1 + 2 * n) * this.getPipWidth() / 2;
+                x = width - margin - (1 + 2 * n) * this.getPointWidth() / 2;
             }
             // right
             if (6 <= i && i < 12) {
-                x = margin + (11 - 2 * n) * this.getPipWidth() / 2;
+                x = margin + (11 - 2 * n) * this.getPointWidth() / 2;
             }
         }
 
@@ -377,11 +368,11 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 
             // left
             if (0 <= i && i < 6) {
-                x = margin + (1 + 2 * n) * this.getPipWidth() / 2;
+                x = margin + (1 + 2 * n) * this.getPointWidth() / 2;
             }
             // right
             if (6 <= i && i < 12) {
-                x = width - margin - (11 - 2 * n) * this.getPipWidth() / 2;
+                x = width - margin - (11 - 2 * n) * this.getPointWidth() / 2;
             }
         }
 
@@ -395,9 +386,9 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
     }
 
     /**
-     * Tells the direction of the pip based on the side of the board it is on.
+     * Tells the direction of the point based on the side of the board it is on.
      */
-    private int getPipOrientation(int index) {
+    private int getPointOrientation(int index) {
 
         if (1 <= index && index < 13)
             return -1;
@@ -416,9 +407,9 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
     }
 
     /**
-     * Returns the width of a single pip in the board.
+     * Returns the width of a single point in the board.
      */
-    private int getPipWidth() {
+    private int getPointWidth() {
         int width = this.getWidth();
         int margin = PADDING + BOARD_BORDER;
         int space = width - 2 * margin - BAR_WIDTH;
@@ -427,9 +418,9 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
     }
 
     /**
-     * Returns the height of a pip based on the height of the board.
+     * Returns the height of a point based on the height of the board.
      */
-    private int getPipHeight() {
+    private int getPointHeight() {
         int height = this.getHeight();
         int margin = BOARD_BORDER + PADDING;
         int space = height - 2 * margin - BOARD_BORDER;
@@ -438,20 +429,20 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
     }
 
     /**
-     * Returns the position of the checker on the board given the index of the pip
+     * Returns the position of the checker on the board given the index of the point
      * and the checker position.
      */
     private Point getCheckerPosition(int index, int checker) {
         // Calculate the size of each checker and the number of checkers in each row.
         int size = this.getCheckerSize();
-        int row = this.getPipHeight() / size;
+        int row = this.getPointHeight() / size;
 
-        // Direction tells how we should add next checkers to the pip.
-        int direction = this.getPipOrientation(index);
-        Point base = this.getPipBase(index);
+        // Direction tells how we should add next checkers to the point.
+        int direction = this.getPointOrientation(index);
+        Point base = this.getPointBase(index);
 
         int x = base.x;
-        int y = base.y + this.getPipOrientation(index) * (size / 2);
+        int y = base.y + this.getPointOrientation(index) * (size / 2);
 
         // Coordinates calculation.
         int offset = (checker / row) * CHECKER_OFFSET;
@@ -466,11 +457,11 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
      * Returns the size of the checker based on the size of the board.
      */
     private int getCheckerSize() {
-        return this.getPipWidth() * 4 / 5;
+        return this.getPointWidth() * 4 / 5;
     }
 
     /**
-     * Returns the color of a checker on a given pip.
+     * Returns the color of a checker on a given point.
      */
     private Color getCheckerColor(int checkers) {
         Color color = WHITE_CHECKER;
@@ -536,18 +527,18 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
     /**
      * Paints a possible target where the user may drop the checker.
      */
-    private void paintDrop(Graphics g, int pip, boolean targeted) {
+    private void paintDrop(Graphics g, int point, boolean targeted) {
         // Make sure we are on the board when drawing.
-        if (pip < 1 || 25 < pip) return;
+        if (point < 1 || 25 < point) return;
 
         int size = this.getCheckerSize() / 2;
 
         // Calculate the position of the next checker.
-        int checker = Math.abs(this.delegate.board()[pip]);
-        if (this.dragged != null && this.dragged == pip)
+        int checker = Math.abs(this.delegate.board()[point]);
+        if (this.dragged != null && this.dragged == point)
             checker--;
 
-        Point base = this.getCheckerPosition(pip, checker);
+        Point base = this.getCheckerPosition(point, checker);
 
         // Draw the target.
         g.setColor(DROP_COLOR);
@@ -644,7 +635,7 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 
         int size = this.getCheckerSize();
 
-        // Find the index of the pip of the clicked checker.
+        // Find the index of the point of the clicked checker.
         int index = -1;
 
         for (int i = 0; i < 26; i++) {
@@ -683,44 +674,43 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 
 
         /**
-         * The distance of the closes droppable pip.
+         * The distance of the closes droppable point.
          */
-        Integer pip = null;
+        Integer point = null;
         double closest = width + height;
 
         /**
          * Check if mouse is out of board bounds (i.e. dragging out) and consider the
          * direction of the dragged stone to see which side is pulling out.
          *
-         * If white is bearing, it should drag to 0. Conversely, black should drag to 26.
-         * Since black's direction is positive (1), we can get to 26 as 1 * 26. For white
-         * we want (1 - 1) * 26.
+         * If white is bearing, it should drag to 0. Conversely, black should drag to 25.
+         * Since black's direction is positive (1), we can get to 25 as 1 * 25.
          */
         if (mouse.x < PADDING || mouse.y < PADDING || mouse.x > width - PADDING || mouse.y > height - PADDING) {
-            pip = (1 + direction) / 2 * 26;
+            point = (1 + direction) / 2 * 25;
             closest = 0;
         }
 
-        // Find the closest pip to the mouse.
+        // Find the closest point to the mouse.
         for (int i = 1; i < 25; i++) {
-            Point coord = this.getPipBase(i);
+            Point coord = this.getPointBase(i);
 
             int dx = this.mouse.x - coord.x;
             int dy = this.mouse.y - coord.y;
             double diff = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
 
             /**
-             * We always fix the diff, but only make a pip selection if it can actually be
+             * We always fix the diff, but only make a point selection if it can actually be
              * selected.
              */
             if (diff <= closest) {
                 closest = diff;
-                pip = i;
+                point = i;
             }
         }
 
-        if (this.drops.contains(pip))
-            this.target = pip;
+        if (this.drops.contains(point))
+            this.target = point;
         else
             this.target = null;
 
