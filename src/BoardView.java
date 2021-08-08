@@ -40,22 +40,29 @@ interface BoardViewDelegate {
      * @param end
      */
     void onDragged(int start, int end);
+
+    /**
+     * Current dice.
+     */
+    int[] dice();
 }
 
 
 @SuppressWarnings("serial")
 class BoardView extends JPanel implements MouseListener, MouseMotionListener {
     // Offset from the edge of the screen.
-    private static int PADDING = 50;
+    private static int PADDING = 75;
 
     // Board padding or the border of the board.
     private static int BOARD_BORDER = 30;
     // The widht of the bar in the center.
     private static int BAR_WIDTH = 2 * BOARD_BORDER;
-    // How wide should a pip preferrably be.
+    // How wide should a pip preferably be.
     private static int PREFERRED_PIP_WIDTH = 60;
     // The offset of checker over the other checker.
     private static int CHECKER_OFFSET = 5;
+    // Number of checkers that each player has.
+    private static int CHECKERS = 15;
 
     // Board color settings.
     private static Color BOARD_COLOR = new Color(117, 60, 24);
@@ -69,6 +76,8 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
     private static Color CHECKER_BACKGROUND = new Color(233, 241, 223);
     private static Color DROP_COLOR = new Color(75, 75, 75);
     private static Color TARGET_COLOR = new Color(0, 0, 0);
+    private static Color DIE_COLOR = new Color(240, 240, 240);
+    private static Color DOTS_COLOR = new Color(0, 0, 0);
 
     // MARK: - Properties
 
@@ -159,7 +168,7 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 
         // ----------------------------------------------
 
-        int size = this.getCheckerSize();
+        int checkerSize = this.getCheckerSize();
 
         // Paint each of the pips.
         for (int i = 1; i < 25; i++) {
@@ -177,7 +186,26 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 
             for (int j = 0; j < Math.abs(checkers); j++) {
                 Point coord = this.getCheckerPosition(i, j);
-                this.paintChecker(g, coord.x, coord.y, size / 2, color);
+                this.paintChecker(g, coord.x, coord.y, checkerSize / 2, color);
+            }
+        }
+
+        // ----------------------------------------------
+
+        // Paint the checkers players have borne off the board.
+        int center = this.getWidth() / 2;
+
+        for (int turn : new int[]{-1, 1}) {
+            Color color = this.getCheckerColor(turn);
+
+            int saved = CHECKERS - this.remainingCheckers(turn);
+
+            for (int i = 0; i < saved; i++) {
+                int x = center - (saved * checkerSize / 4) + i * checkerSize;
+                int y = ((1 - turn) / 2 * this.getHeight()) + (turn * PADDING / 2);
+
+                System.out.println(turn + ": " + x + "," + y);
+                this.paintChecker(g, x, y, checkerSize / 2, color);
             }
         }
 
@@ -195,12 +223,31 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
         // Paint the dragged checker.
         if (this.dragged != null) {
             Color color = this.getCheckerColor(this.direction);
-            this.paintChecker(g, this.mouse.x, this.mouse.y, size / 2, color);
+            this.paintChecker(g, this.mouse.x, this.mouse.y, checkerSize / 2, color);
         }
+
+
+        // ----------------------------------------------
+
+        // Paint the dice.
+        int[] dice = this.delegate.dice();
+
+        int diceSize = 2 * BOARD_BORDER / 3;
+        int spacing = 2 * BOARD_BORDER / 6;
+
+        int start = (this.getWidth() / 2) - (dice.length * (diceSize + spacing) - spacing) / 2;
+
+        for (int i = 0; i < dice.length; i++) {
+            int x = start + diceSize / 2 + i * (diceSize + spacing);
+            int y = this.getHeight() / 2;
+
+            this.paintDie(g, diceSize, new Point(x, y), dice[i]);
+        }
+
     }
 
     /**
-     * Paints the outer edeges of the board.
+     * Paints the outer edges of the board.
      */
     private void paintBoard(Graphics g) {
         // Size of the board.
@@ -284,9 +331,6 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 
     /**
      * Returns where on the screen the pip should start.
-     *
-     * @param index
-     * @return
      */
     private Point getPipBase(int index) {
         // Screen sizes
@@ -310,7 +354,7 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
         // black bar
         if (index == 0) {
             x = width / 2;
-            y = height / 2 + BOARD_BORDER / 3;
+            y = height / 2 + BOARD_BORDER;
         }
 
         // bottom
@@ -344,7 +388,7 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
         // white bar
         if (index == 25) {
             x = width / 2;
-            y = height / 2 - BOARD_BORDER / 3;
+            y = height / 2 - BOARD_BORDER;
         }
 
         return new Point(x, y);
@@ -352,9 +396,6 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 
     /**
      * Tells the direction of the pip based on the side of the board it is on.
-     *
-     * @param index
-     * @return
      */
     private int getPipOrientation(int index) {
 
@@ -376,8 +417,6 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 
     /**
      * Returns the width of a single pip in the board.
-     *
-     * @return
      */
     private int getPipWidth() {
         int width = this.getWidth();
@@ -389,8 +428,6 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 
     /**
      * Returns the height of a pip based on the height of the board.
-     *
-     * @return
      */
     private int getPipHeight() {
         int height = this.getHeight();
@@ -403,10 +440,6 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
     /**
      * Returns the position of the checker on the board given the index of the pip
      * and the checker position.
-     *
-     * @param index
-     * @param checker
-     * @return
      */
     private Point getCheckerPosition(int index, int checker) {
         // Calculate the size of each checker and the number of checkers in each row.
@@ -431,8 +464,6 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 
     /**
      * Returns the size of the checker based on the size of the board.
-     *
-     * @return
      */
     private int getCheckerSize() {
         return this.getPipWidth() * 4 / 5;
@@ -440,9 +471,6 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 
     /**
      * Returns the color of a checker on a given pip.
-     *
-     * @param checkers
-     * @return
      */
     private Color getCheckerColor(int checkers) {
         Color color = WHITE_CHECKER;
@@ -507,9 +535,6 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 
     /**
      * Paints a possible target where the user may drop the checker.
-     *
-     * @param pip
-     * @param targeted
      */
     private void paintDrop(Graphics g, int pip, boolean targeted) {
         // Make sure we are on the board when drawing.
@@ -530,6 +555,84 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
             g.setColor(TARGET_COLOR);
 
         g.fillOval(base.x - size / 2, base.y - size / 2, size, size);
+    }
+
+    /**
+     * Returns the number of checkers that are still on the board
+     * with the given direction.
+     */
+    private int remainingCheckers(int direction) {
+        int checkers = 0;
+        int[] board = this.delegate.board();
+
+        for (int i = 0; i < board.length; i++) {
+            if (direction * board[i] >= 0) checkers += direction * board[i];
+        }
+
+        return checkers;
+    }
+
+    /**
+     * Draws a die with a given value at desired destination.
+     */
+    private void paintDie(Graphics g, int size, Point center, int value) {
+        int r = size / 2 ;
+        int spacing = size / 4;
+
+        int x = center.x - r;
+        int y = center.y - r;
+
+        // Draw the dice.
+        g.setColor(DIE_COLOR);
+        g.fillRect(center.x, y, r, r);
+        g.fillRect(x, y, size, size);
+
+        // Figure out the points on dice.
+        Point[] points = new Point[value];
+
+        switch (value) {
+            case 1:
+                points[0] = new Point(center.x, center.y);
+                break;
+            case 2:
+                points[0] = new Point(center.x - spacing, center.y);
+                points[1] = new Point(center.x + spacing, center.y);
+                break;
+            case 3:
+                points[0] = new Point(center.x - spacing, center.y - spacing);
+                points[1] = new Point(center.x, center.y);
+                points[2] = new Point(center.x + spacing, center.y + spacing);
+                break;
+            case 4:
+                points[0] = new Point(center.x - spacing, center.y - spacing);
+                points[1] = new Point(center.x - spacing, center.y + spacing);
+                points[2] = new Point(center.x + spacing, center.y + spacing);
+                points[3] = new Point(center.x + spacing, center.y - spacing);
+                break;
+            case 5:
+                points[0] = new Point(center.x - spacing, center.y - spacing);
+                points[1] = new Point(center.x - spacing, center.y + spacing);
+                points[2] = new Point(center.x, center.y);
+                points[3] = new Point(center.x + spacing, center.y - spacing);
+                points[4] = new Point(center.x + spacing, center.y + spacing);
+                break;
+            case 6:
+                points[0] = new Point(center.x - spacing, center.y - spacing);
+                points[1] = new Point(center.x - spacing, center.y);
+                points[2] = new Point(center.x - spacing, center.y + spacing);
+                points[3] = new Point(center.x + spacing, center.y - spacing);
+                points[4] = new Point(center.x + spacing, center.y);
+                points[5] = new Point(center.x + spacing, center.y + spacing);
+                break;
+            default:
+                break;
+        }
+
+        // Draw dots.
+        g.setColor(DOTS_COLOR);
+        for (Point p : points) {
+            g.drawOval(p.x, p.y, 2, 2);
+        }
     }
 
     // MARK: - Events

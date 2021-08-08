@@ -114,11 +114,22 @@ class Game {
 
     /**
      * Returns the current board.
-     *
-     * @return
      */
     public int[] getBoard() {
         return this.pips;
+    }
+
+    /**
+     * Returns the current dice.
+     */
+    public int[] getDice() {
+        int[] dice = new int[this.dice.size()];
+
+        for (int i = 0; i < this.dice.size(); i++) {
+           dice[i] = this.dice.get(i);
+        }
+
+        return dice;
     }
 
 
