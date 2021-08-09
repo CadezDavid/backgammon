@@ -39,6 +39,12 @@ class Model {
      */
     private State state;
 
+    /**
+     * Tells all plays the current player can play. Could be used for telling
+     * the state of a player's round instead of dice.
+     */
+    private List<LinkedList<Move>> allPlays;
+
     enum State {
         // meaning of states:
         // STARTING - before the start, when players roll the die to determine who
@@ -106,6 +112,10 @@ class Model {
         }
     }
 
+    /**
+     * Calculates allPossiblePlays for current dice and returns all moves that
+     * can be played as first which start on startPoint.
+     */
     public Set<Integer> getAllPlays(int startPoint) {
         Set<Integer> plays = new HashSet<Integer>();
         List<LinkedList<Move>> allPlays = getAllPlays(this.points, getDirection(), getDice());
@@ -311,9 +321,8 @@ class Model {
         this.points = move(this.points, move);
         if (dice.size() > 0) {
             dice.remove((Integer) Math.abs(move.getEndPoint() - move.getStartPoint()));
-        }
-        else {
-        updateState();
+        } else {
+            updateState();
         }
     }
 
