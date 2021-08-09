@@ -40,8 +40,8 @@ class Model {
     private State state;
 
     /**
-     * Tells all plays the current player can play. Could be used for telling
-     * the state of a player's round instead of dice.
+     * Tells all plays the current player can play. Could be used for telling the
+     * state of a player's round instead of dice.
      */
     private List<LinkedList<Move>> allPlays;
 
@@ -65,6 +65,8 @@ class Model {
         this.state = State.STARTING;
         // this.dice = new ArrayList<Integer>();
 
+        this.allPlays = new ArrayList<LinkedList<Move>>();
+
         this.roll();
     }
 
@@ -75,6 +77,8 @@ class Model {
         this.points = new int[] { 0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -1, -1 };
         this.state = State.STARTING;
         // this.dice = new ArrayList<Integer>();
+
+        this.allPlays = new ArrayList<LinkedList<Move>>();
 
         this.roll();
     }
@@ -113,8 +117,8 @@ class Model {
     }
 
     /**
-     * Calculates allPossiblePlays for current dice and returns all moves that
-     * can be played as first which start on startPoint.
+     * Calculates allPossiblePlays for current dice and returns all moves that can
+     * be played as first which start on startPoint.
      */
     public Set<Integer> getAllPlays(int startPoint) {
         Set<Integer> plays = new HashSet<Integer>();
@@ -217,48 +221,39 @@ class Model {
         // // Check that direction is respected.
         // return board[start] * board[end] >= 0;
 
+        // if player has a checker on the start point
+        if (points[move.getStartPoint()] * direction <= 0) {
+            return false;
+        }
+
+        // if player has checkers on the bar and isn't moving those
+        if (points[(25 - 25 * direction) / 2] != 0 && move.getStartPoint() != (25 - 25 * direction) / 2) {
+            return false;
+        }
+
         // if player is bearing off
-        if (move.getEndPoint() < 0 || 25 < move.getEndPoint()) {
-            // if he can
-            if (canBearOff(points, direction)) {
+        if (move.getEndPoint() <= 0 || 25 <= move.getEndPoint()) {
+            if (!canBearOff(points, direction)) {
                 return false;
-            } else if (move.getEndPoint() < -1) {
+            } else if (move.getEndPoint() < 0) {
                 for (int i = 6; i < move.getStartPoint(); i--) {
                     if (points[i] < 0) {
                         return false;
                     }
                 }
-            } else if (26 < move.getEndPoint()) {
+            } else if (25 < move.getEndPoint()) {
                 for (int i = 18; i < move.getStartPoint(); i++) {
                     if (points[i] > 0) {
                         return false;
                     }
                 }
             }
-        } else
-        // if player is move from the bar
-        if (move.getStartPoint() == 0 || move.getStartPoint() == 25) {
-            // if checkers on the board make sense
-            if ((points[move.getStartPoint()] > 0) && (direction * points[move.getEndPoint()] > -2)) {
-                return false;
-            }
-
-            // if player has no checkers on the bar
-            if (points[(25 - 25 * direction) / 2] == 0) {
-                return false;
-            }
+            return true;
         }
-        // usual case
-        else {
-            // if checkers on the board make sense
-            if ((direction * points[move.getStartPoint()] > 0) && (direction * points[move.getEndPoint()] > -2)) {
-                return false;
-            }
 
-            // if player has checkers on the bar
-            if (points[(25 - 25 * direction) / 2] != 0) {
-                return false;
-            }
+        // if checkers on the board make sense
+        if (direction * points[move.getEndPoint()] < -1) {
+            return false;
         }
 
         // if the direction of moving is correct
@@ -283,11 +278,11 @@ class Model {
         // Figure out which checker are we trying to move.
         int direction = getPointDirection(board, move.getStartPoint());
 
-        // Remove the checker from the move.getStartPoint()ing field.
+        // Remove the checker from the start point.
         board[move.getStartPoint()] -= direction;
 
         // Check that we are still on the board when making a move.
-        if (1 < move.getEndPoint() && move.getEndPoint() < 25) {
+        if (0 < move.getEndPoint() && move.getEndPoint() < 25) {
             // Regularly move the checker if we are not beating.
             if (board[move.getEndPoint()] * direction >= 0) {
                 board[move.getEndPoint()] += direction;
@@ -306,7 +301,7 @@ class Model {
     private static boolean canBearOff(int[] points, int direction) {
         int c = 7 * (1 - direction) / 2;
         for (int i = c; i < 19 + c; i++) {
-            if (points[i] * c > 0) {
+            if (points[i] * direction > 0) {
                 return false;
             }
         }
@@ -319,9 +314,15 @@ class Model {
      */
     public void move(Move move) {
         this.points = move(this.points, move);
-        if (dice.size() > 0) {
-            dice.remove((Integer) Math.abs(move.getEndPoint() - move.getStartPoint()));
-        } else {
+        List<LinkedList<Move>> newAllPlays = new ArrayList<LinkedList<Move>>();
+        for (LinkedList<Move> play : allPlays) {
+            if (!play.isEmpty() && play.getFirst().equals(move)) {
+                play.pop();
+                newAllPlays.add(play);
+            }
+        }
+        this.allPlays = newAllPlays;
+        if (allPlays.isEmpty()) {
             updateState();
         }
     }
