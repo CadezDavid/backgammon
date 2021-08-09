@@ -29,9 +29,9 @@ class Model {
     public Player black;
     public Player white;
 
-    /// **
-    // * Currently active dice.
-    // */
+    /**
+     * Currently active dice.
+     */
     private List<Integer> dice;
 
     /**
@@ -127,6 +127,7 @@ class Model {
                 if (isMoveValid(points, direction, new Move(i, i + direction * dice.get(0)))) {
                     curr.push(new Move(i, i + direction * dice.get(0)));
                 }
+                plays.add(curr);
             }
             return plays;
         }
@@ -304,14 +305,16 @@ class Model {
     }
 
     /**
-     * Performs a given move on this object and return nothing.
+     * Performs a given move on this object and returns nothing.
      */
     public void move(Move move) {
         this.points = move(this.points, move);
         if (dice.size() > 0) {
-            dice.remove(move.getEndPoint() - move.getStartPoint());
+            dice.remove((Integer) Math.abs(move.getEndPoint() - move.getStartPoint()));
         }
-        //updateState();
+        else {
+        updateState();
+        }
     }
 
     private void updateState() {
