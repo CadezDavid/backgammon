@@ -3,7 +3,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Model represents the state of the app. Everything that persists for a longer
@@ -62,12 +61,11 @@ class Model {
         this.white = new Player(nameBP, typeBP);
 
         this.points = new int[] { 0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -1, -1 };
-        this.state = State.STARTING;
+        this.state = State.MOVE_WHITE;
         // this.dice = new ArrayList<Integer>();
 
-        this.allPlays = new ArrayList<LinkedList<Move>>();
-
         this.roll();
+        this.allPlays = getAllPlays(points, -1, dice);
     }
 
     public Model() {
@@ -75,12 +73,11 @@ class Model {
         this.black = new Player();
 
         this.points = new int[] { 0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -1, -1 };
-        this.state = State.STARTING;
+        this.state = State.MOVE_WHITE;
         // this.dice = new ArrayList<Integer>();
 
-        this.allPlays = new ArrayList<LinkedList<Move>>();
-
         this.roll();
+        this.allPlays = getAllPlays(points, -1, dice);
     }
 
     // MARK: - Accessors
@@ -128,7 +125,6 @@ class Model {
                 plays.add(play.getFirst().getEndPoint());
             }
         }
-        System.out.println(plays);
         return plays;
     }
 
@@ -137,9 +133,11 @@ class Model {
 
         if (dice.size() == 1) {
             for (int i = 0; i < 26; i++) {
+                int end = i + direction * dice.get(0);
+                Move move = new Move(i, end);
                 LinkedList<Move> curr = new LinkedList<Move>();
-                if (isMoveValid(points, direction, new Move(i, i + direction * dice.get(0)))) {
-                    curr.push(new Move(i, i + direction * dice.get(0)));
+                if (isMoveValid(points, direction, move)) {
+                    curr.push(move);
                 }
                 plays.add(curr);
             }
@@ -155,8 +153,9 @@ class Model {
             }
             clone.remove(dice.get(i));
 
-            for (LinkedList<Move> play : getAllPlays(move(points, new Move(i, i + direction * dice.get(0))), direction,
-                    clone)) {
+            List<LinkedList<Move>> playsRec = getAllPlays(move(points, new Move(i, i + direction * dice.get(0))),
+                    direction, clone);
+            for (LinkedList<Move> play : playsRec) {
                 LinkedList<Move> tmp = (LinkedList<Move>) play.clone();
                 for (Move move : moves) {
                     tmp.push(move);
@@ -166,29 +165,21 @@ class Model {
         }
 
         // removes duplicates and ensures all plays will be the same length
-        List<LinkedList<Move>> playsNoDup = plays.stream().distinct().collect(Collectors.toList());
-        playsNoDup.remove(new LinkedList<Move>());
-        if (playsNoDup.isEmpty()) {
-            playsNoDup.add(new LinkedList<Move>());
+        plays.remove(new LinkedList<Move>());
+        if (plays.isEmpty()) {
+            plays.add(new LinkedList<Move>());
         }
-        return playsNoDup;
+        return plays;
     }
 
     public static List<Move> getValidMoves(int[] points, int direction, int die) {
         List<Move> moves = new ArrayList<>();
 
-        if (direction * points[(25 - 25 * direction) / 2] > 0) {
-            Move move = new Move((25 - 25 * direction) / 2, (25 - 25 * direction) / 2 + direction * die);
+        for (int i = 0; i < 26; i++) {
+            int end = i + direction * die;
+            Move move = new Move(i, end);
             if (isMoveValid(points, direction, move)) {
                 moves.add(move);
-            } else {
-            }
-        } else {
-            for (int i = 1; i < 25; i++) {
-                Move move = new Move(i, i + direction * die);
-                if (isMoveValid(points, direction, move)) {
-                    moves.add(move);
-                }
             }
         }
         return moves;
@@ -312,19 +303,23 @@ class Model {
     /**
      * Performs a given move on this object and returns nothing.
      */
-    public void move(Move move) {
-        this.points = move(this.points, move);
+    public void move(Move m) {
+        this.points = move(this.points, m);
         List<LinkedList<Move>> newAllPlays = new ArrayList<LinkedList<Move>>();
-        for (LinkedList<Move> play : allPlays) {
-            if (!play.isEmpty() && play.getFirst().equals(move)) {
+        for (LinkedList<Move> play : this.allPlays) {
+            System.out.println(play.size());
+            if (play.size() > 1 && play.getFirst().equals(m)) {
                 play.pop();
                 newAllPlays.add(play);
+                System.out.print("Hej");
             }
         }
         this.allPlays = newAllPlays;
-        if (allPlays.isEmpty()) {
+        if (newAllPlays.isEmpty()) {
             updateState();
+            roll();
         }
+        System.out.print(this.state);
     }
 
     private void updateState() {
@@ -338,12 +333,12 @@ class Model {
             }
         }
 
-        if (black == 15) {
+        if (black == 0) {
             state = State.WIN_BLACK;
-        } else if (white == -15) {
+        } else if (white == 0) {
             state = State.WIN_WHITE;
         } else {
-            state = (state == State.MOVE_WHITE ? State.MOVE_BLACK : State.MOVE_WHITE);
+            state = (state == State.MOVE_WHITE || state == State.STARTING ? State.MOVE_BLACK : State.MOVE_WHITE);
         }
     }
 
