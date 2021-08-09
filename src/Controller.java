@@ -1,6 +1,7 @@
-import javax.swing.*;
-import java.util.HashSet;
 import java.util.Set;
+
+import javax.swing.JFrame;
+import javax.swing.JPanel;
 
 @SuppressWarnings("serial")
 public class Controller extends JFrame implements BoardViewDelegate, SettingsViewDelegate {
@@ -31,25 +32,29 @@ public class Controller extends JFrame implements BoardViewDelegate, SettingsVie
 
     @Override
     public Set<Integer> draggable(int start) {
-        Game game = this.model.getGame();
-        return game.getMoves(start);
+        Model model = this.model;
+        return model.getAllPlays(start);
     }
 
     @Override
     public void onDragged(int start, int end) {
-        Game game = this.model.getGame();
-        game.move(start, end);
+        Model model = this.model;
+        model.move(new Move(start, end));
     }
 
     @Override
     public int[] dice() {
-        Game game = this.model.getGame();
-        return game.getDice();
+        Model model = this.model;
+        int[] dice = new int[model.getDice().size()];
+        for (int i = 0; i <  model.getDice().size(); i++){
+            dice[i] = model.getDice().get(i);
+        }
+        return dice;
     }
 
     @Override
     public int[] board() {
-        Game game = this.model.getGame();
-        return game.getBoard();
+        Model model = this.model;
+        return model.getBoard();
     }
 }
