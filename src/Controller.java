@@ -41,7 +41,7 @@ public class Controller extends JFrame implements BoardViewDelegate, SettingsVie
     @Override
     public void onDragged(int start, int end) {
         Model model = this.model;
-        model.move(new Move(start, end));
+        model.move(new UtilitiesMove(start, end));
     }
 
     @Override

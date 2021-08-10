@@ -42,7 +42,7 @@ class Model {
      * Tells all plays the current player can play. Could be used for telling the
      * state of a player's round instead of dice.
      */
-    private List<LinkedList<Move>> allPlays;
+    private List<LinkedList<Utils.Move>> allPlays;
 
     enum State {
         // meaning of states:
@@ -98,10 +98,6 @@ class Model {
 
     // MARK: - Methods
 
-    // static: getPointDirection, getAllPlays, getValidMoves, isMoveValid,
-    // canBearOff, move
-    // non-static: isMoveValid, getDirection
-
     /**
      * Returns the direction of the point.
      */
@@ -119,8 +115,8 @@ class Model {
      */
     public Set<Integer> getAllPlays(int startPoint) {
         Set<Integer> plays = new HashSet<Integer>();
-        List<LinkedList<Move>> allPlays = getAllPlays(this.points, getDirection(), getDice());
-        for (LinkedList<Move> play : allPlays) {
+        List<LinkedList<Utils.Move>> allPlays = getAllPlays(this.points, getDirection(), getDice());
+        for (LinkedList<Utils.Move> play : allPlays) {
             if ((!play.isEmpty()) && play.getFirst().getStartPoint() == startPoint) {
                 plays.add(play.getFirst().getEndPoint());
             }
@@ -128,14 +124,14 @@ class Model {
         return plays;
     }
 
-    public static List<LinkedList<Move>> getAllPlays(int[] points, int direction, List<Integer> dice) {
-        List<LinkedList<Move>> plays = new ArrayList<LinkedList<Move>>();
+    public static List<LinkedList<Utils.Move>> getAllPlays(int[] points, int direction, List<Integer> dice) {
+        List<LinkedList<Utils.Move>> plays = new ArrayList<LinkedList<Utils.Move>>();
 
         if (dice.size() == 1) {
             for (int i = 0; i < 26; i++) {
                 int end = i + direction * dice.get(0);
-                Move move = new Move(i, end);
-                LinkedList<Move> curr = new LinkedList<Move>();
+                Utils.Move move = new Utils.Move(i, end);
+                LinkedList<Utils.Move> curr = new LinkedList<Utils.Move>();
                 if (isMoveValid(points, direction, move)) {
                     curr.push(move);
                 }
@@ -146,18 +142,18 @@ class Model {
 
         for (int i = 0; i < dice.size(); i++) {
 
-            List<Move> moves = getValidMoves(points, direction, dice.get(i));
+            List<Utils.Move> moves = getValidMoves(points, direction, dice.get(i));
             List<Integer> clone = new ArrayList<Integer>();
             for (int j = 0; j < dice.size(); j++) {
                 clone.add(dice.get(j));
             }
             clone.remove(dice.get(i));
 
-            List<LinkedList<Move>> playsRec = getAllPlays(move(points, new Move(i, i + direction * dice.get(0))),
+            List<LinkedList<Utils.Move>> playsRec = getAllPlays(move(points, new Utils.Move(i, i + direction * dice.get(0))),
                     direction, clone);
-            for (LinkedList<Move> play : playsRec) {
-                LinkedList<Move> tmp = (LinkedList<Move>) play.clone();
-                for (Move move : moves) {
+            for (LinkedList<Utils.Move> play : playsRec) {
+                LinkedList<Utils.Move> tmp = (LinkedList<Utils.Move>) play.clone();
+                for (Utils.Move move : moves) {
                     tmp.push(move);
                 }
                 plays.add(tmp);
@@ -165,19 +161,19 @@ class Model {
         }
 
         // removes duplicates and ensures all plays will be the same length
-        plays.remove(new LinkedList<Move>());
+        plays.remove(new LinkedList<Utils.Move>());
         if (plays.isEmpty()) {
-            plays.add(new LinkedList<Move>());
+            plays.add(new LinkedList<Utils.Move>());
         }
         return plays;
     }
 
-    public static List<Move> getValidMoves(int[] points, int direction, int die) {
-        List<Move> moves = new ArrayList<>();
+    public static List<Utils.Move> getValidMoves(int[] points, int direction, int die) {
+        List<Utils.Move> moves = new ArrayList<>();
 
         for (int i = 0; i < 26; i++) {
             int end = i + direction * die;
-            Move move = new Move(i, end);
+            Utils.Move move = new Utils.Move(i, end);
             if (isMoveValid(points, direction, move)) {
                 moves.add(move);
             }
@@ -188,30 +184,7 @@ class Model {
     /**
      * Tells whether a player can make a move.
      */
-    private static boolean isMoveValid(int[] points, int direction, Move move) {
-        // // Check that we are taking from the right pile.
-        // if (getPointDirection(board, start) * direction < 0)
-        // return false;
-        //
-        // // Number of checkers locked on the bar.
-        // int bar = (1 - direction) / 2 * 25;
-        // int locked = Math.abs(board[bar]);
-        //
-        // // Check if we are pulling from the bar and if we need to.
-        // if (locked > 0 && bar != start)
-        // return false;
-        //
-        // // Check if we are pulling off the board.
-        // if (end < 0 || end > 25)
-        // return true;
-        //
-        // // We can beat the other player.
-        // if (board[end] * direction < 0 && Math.abs(board[end]) == 1)
-        // return true;
-        //
-        // // Check that direction is respected.
-        // return board[start] * board[end] >= 0;
-
+    private static boolean isMoveValid(int[] points, int direction, Utils.Move move) {
         // if player has a checker on the start point
         if (points[move.getStartPoint()] * direction <= 0) {
             return false;
@@ -258,7 +231,7 @@ class Model {
     /**
      * Performs a given move and returns a new board.
      */
-    public static int[] move(int[] board, Move move) {
+    public static int[] move(int[] board, Utils.Move move) {
         // Make sure we are not writing to the original board.
         board = board.clone();
 
@@ -303,10 +276,10 @@ class Model {
     /**
      * Performs a given move on this object and returns nothing.
      */
-    public void move(Move m) {
+    public void move(Utils.Move m) {
         this.points = move(this.points, m);
-        List<LinkedList<Move>> newAllPlays = new ArrayList<LinkedList<Move>>();
-        for (LinkedList<Move> play : this.allPlays) {
+        List<LinkedList<Utils.Move>> newAllPlays = new ArrayList<LinkedList<Utils.Move>>();
+        for (LinkedList<Utils.Move> play : this.allPlays) {
             System.out.println(play.size());
             if (play.size() > 1 && play.getFirst().equals(m)) {
                 play.pop();
@@ -342,83 +315,18 @@ class Model {
         }
     }
 
-    public List<LinkedList<Move>> getAllPlays(List<Integer> dice) {
+    public List<LinkedList<Utils.Move>> getAllPlays(List<Integer> dice) {
         int direction = (state == State.MOVE_BLACK ? 1 : -1);
         return getAllPlays(this.points, direction, dice);
     }
 
-    private boolean isMoveValid(Move move) {
+    private boolean isMoveValid(Utils.Move move) {
         return isMoveValid(this.points, this.getDirection(), move);
     }
 
     private int getDirection() {
         return (state == State.MOVE_BLACK ? 1 : -1);
     }
-
-    /// **
-    // * tells where the player may move the checkers from the starting point.
-    // */
-    // public Set<Integer> getMoves(int start) {
-    // int direction = this.getPointDirection(start);
-    //
-    // HashSet<Integer> moves = new HashSet<Integer>();
-    //
-    /// **
-    // * We iterate over all dice combinations and check for each combination
-    // whether
-    // * we could make a reasonable move with it.
-    // */
-    // for (int i = 0; i < this.dice.size(); i++) {
-    // int end = start + this.dice.get(i) * direction;
-    // int[] board = this.points.clone();
-    //
-    //// Check the bounds.
-    // if (end < 0)
-    // end = 0;
-    // if (end > 25)
-    // end = 25;
-    //
-    //// Check that we are dropping checker on our stones or beating the other
-    // player.
-    // if (direction * board[end] < 0 && Math.abs(board[end]) > 1)
-    // continue;
-    //
-    //// Make sure that moves is valid.
-    // if (!this.isMoveValid(start, end))
-    // continue;
-    //
-    //// Check if there's only one die left.
-    // if (this.dice.size() == 1) {
-    // moves.add(end);
-    // continue;
-    // }
-    //
-    //// Otherwise, make the first move and see if we can make it out.
-    // board = move(board, start, end);
-    //
-    // second: for (int j = 0; j < this.dice.size(); j++) {
-    //// We can't repeat the same die.
-    // if (j == i)
-    // continue;
-    //
-    //// We check for each point with the same orientation whether we can make
-    //// a move for remaining number of points.
-    // for (int point = 0; point < board.length; point++) {
-    //// Skip points that are not ours.
-    // if (direction * board[point] <= 0)
-    // continue;
-    //
-    //// Check if the move is valid.
-    // if (isMoveValid(board, player, point, point + this.dice.get(j) * direction))
-    // {
-    // moves.add(end);
-    // break second;
-    // }
-    // }
-    // }
-    // }
-    // return moves;
-    // }
 
     // i would put that in view, where player could "throw" the dice himself
     /**
@@ -437,19 +345,6 @@ class Model {
         }
     }
 
-    // // todo when overflowing!
-    // public void move(int start, int end) {
-    // this.points = move(this.points, start, end);
-    //
-    // // // Update the dice.
-    // // Integer die = Math.abs(end - start);
-    // // this.dice.remove(die);
-    //
-    // // // New turn.
-    // // if (this.dice.size() == 0) {
-    // // this.roll();
-    // // }
-    // }
 }
 
 /**
@@ -494,24 +389,3 @@ class Player {
     }
 }
 
-/**
- * Move represents one move of a checker.
- */
-class Move {
-    private int startPoint;
-    private int endPoint;
-
-    public Move(int startPoint, int endPoint) {
-        this.startPoint = startPoint;
-        this.endPoint = endPoint;
-    }
-
-    public int getStartPoint() {
-        return startPoint;
-    }
-
-    public int getEndPoint() {
-        return endPoint;
-    }
-
-}
