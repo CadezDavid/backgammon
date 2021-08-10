@@ -2,32 +2,61 @@ import javax.swing.*;
 import java.util.HashSet;
 import java.util.Set;
 
-@SuppressWarnings("serial")
-public class Controller extends JFrame implements BoardViewDelegate, SettingsViewDelegate {
+public class Controller extends JFrame implements BoardView.Delegate, SettingsView.Delegate {
 
     // MARK: - State
 
-    private Model model;
+    private final Model model;
     /**
      * View may be anything that conforms to a JPanel. Ideally,
      * controller doesn't know much about the view itself besides the
-     * rerendering options and size.
+     * re-rendering options and size.
      */
     private JPanel view;
 
     // MARK: - Constructor
 
     public Controller() {
+        super("Backgammon");
+
         this.setDefaultCloseOperation(EXIT_ON_CLOSE);
 
         this.model = new Model();
-        this.view = new BoardView(this);
 
-        this.add(this.view);
+        this.view = new SettingsView(this);
+
         this.setPreferredSize(this.view.getPreferredSize());
     }
 
     // MARK: - Methods
+
+    /**
+     * Starts a new game.
+     */
+    void start() {
+        this.view = new BoardView(this);
+
+        this.rerender();
+    }
+
+    void stop() {
+        this.view = new SettingsView(this);
+
+        this.rerender();
+    }
+
+    /**
+     * Recreates the window to present the current view.
+     */
+    private void rerender() {
+        this.removeAll();
+        this.add(this.view);
+
+        this.setPreferredSize(this.view.getPreferredSize());
+
+        this.revalidate();
+        this.repaint();
+    }
 
     @Override
     public Set<Integer> draggable(int start) {
@@ -36,9 +65,12 @@ public class Controller extends JFrame implements BoardViewDelegate, SettingsVie
     }
 
     @Override
-    public void onDragged(int start, int end) {
+    public void onDragged(BoardView.DraggedEvent event) {
         Game game = this.model.getGame();
-        game.move(start, end);
+
+        if (event.getSource() == this.view) {
+            game.move(event.start, event.end);
+        }
     }
 
     @Override

@@ -75,34 +75,10 @@ class Game {
      */
     private final int[] turns;
 
-    /**
-     * Tells the phase that the game is in.
-     */
-    private State state;
-
-    enum State {
-        // meaning of states:
-        // STARTING - before the start, when players roll the die to determine who
-        // starts first
-        // MOVE_WHITE - white player on the move
-        // MOVE_BLACK - black player on the move
-        // DRAW - game ended in a draw
-        // WIN_BLACK - black player won
-        // WIN_WHITE - white player won
-        STARTING,
-        MOVE_WHITE,
-        MOVE_BLACK,
-        DRAW,
-        WIN_BLACK,
-        WIN_WHITE
-    }
-
-
     // MARK: - Constructors
 
     public Game() {
         this.points = new int[]{0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -1, -1};
-        this.state = State.STARTING;
         this.round = 0;
         this.turns = new int[]{-1, 1};
         this.dice = new ArrayList<Integer>();
@@ -140,6 +116,7 @@ class Game {
      * Returns the direction of the point.
      */
     private static int getPointDirection(int[] board, int index) {
+        if (board[index] == 0) return 0;
         return board[index] / Math.abs(board[index]);
     }
 
@@ -274,8 +251,8 @@ class Game {
 
         // Check that we are still on the board when making a move.
         if (1 < end && end < 25) {
-            // Regularly move the checker if we are not beating.
             if (board[end] * direction >= 0) {
+                // Regularly move the checker if we are not beating.
                 board[end] += direction;
             } else {
                 // If it is white player's move, black should be beat and vice-versa.

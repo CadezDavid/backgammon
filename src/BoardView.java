@@ -7,6 +7,7 @@ import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.util.EventObject;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -15,28 +16,6 @@ import javax.swing.JPanel;
 /**
  * This file contains everything related to drawing the board.
  */
-
-interface BoardViewDelegate {
-    /**
-     * Returns the current state on the board.
-     */
-    int[] board();
-
-    /**
-     * Tells whether a stone may be dragged or not by telling where it may be
-     * dropped.
-     */
-    Set<Integer> draggable(int start);
-
-    /**
-     * Event that's triggered when the stone has been dragged to a new location.
-     */
-    void onDragged(int start, int end);
-    /**
-     * Current dice.
-     */
-    int[] dice();
-}
 
 
 class BoardView extends JPanel implements MouseListener, MouseMotionListener {
@@ -69,12 +48,52 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
     private static final Color DIE_COLOR = new Color(240, 240, 240);
     private static final Color DOTS_COLOR = new Color(0, 0, 0);
 
+    // MARK: - Delegate
+
+
+    public interface Delegate {
+        /**
+         * Returns the current state on the board.
+         */
+        int[] board();
+
+        /**
+         * Tells whether a stone may be dragged or not by telling where it may be
+         * dropped.
+         */
+        Set<Integer> draggable(int start);
+
+        /**
+         * Event that's triggered when the stone has been dragged to a new location.
+         */
+        void onDragged(DraggedEvent event);
+        /**
+         * Current dice.
+         */
+        int[] dice();
+    }
+
+    /**
+     * Event triggered when drag happens.
+     */
+    public class DraggedEvent extends EventObject {
+        public final int start;
+        public final int end;
+
+        private DraggedEvent(Object source, int start, int end) {
+            super(source);
+
+            this.start = start;
+            this.end = end;
+        }
+    }
+
     // MARK: - Properties
 
     /**
      * The delegate class that we use to communicate with the outter world.
      */
-    private final BoardViewDelegate delegate;
+    private final Delegate delegate;
 
     // MARK: - State
 
@@ -102,7 +121,7 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 
     // MARK: - Constructor
 
-    public BoardView(BoardViewDelegate delegate) {
+    public BoardView(Delegate delegate) {
         this.delegate = delegate;
 
         this.mouse = this.getMousePosition();
@@ -176,7 +195,7 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 
             for (int j = 0; j < Math.abs(checkers); j++) {
                 Point coord = this.getCheckerPosition(i, j);
-                this.paintChecker(g, coord.x, coord.y, checkerSize / 2, color);
+                paintChecker(g, coord.x, coord.y, checkerSize / 2, color);
             }
         }
 
@@ -194,7 +213,7 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
                 int x = center - (saved * checkerSize / 4) + i * checkerSize;
                 int y = ((1 - turn) / 2 * this.getHeight()) + (turn * PADDING / 2);
 
-                this.paintChecker(g, x, y, checkerSize / 2, color);
+                paintChecker(g, x, y, checkerSize / 2, color);
             }
         }
 
@@ -215,7 +234,7 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
         // Paint the dragged checker.
         if (this.dragged != null) {
             Color color = this.getCheckerColor(this.direction);
-            this.paintChecker(g, this.mouse.x, this.mouse.y, checkerSize / 2, color);
+            paintChecker(g, this.mouse.x, this.mouse.y, checkerSize / 2, color);
         }
 
         // ----------------------------------------------
@@ -232,7 +251,7 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
             int x = start + diceSize / 2 + i * (diceSize + spacing);
             int y = this.getHeight() / 2;
 
-            this.paintDie(g, diceSize, new Point(x, y), dice[i]);
+            paintDie(g, diceSize, new Point(x, y), dice[i]);
         }
 
     }
@@ -474,7 +493,7 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
     /**
      * Paints a checker at a given location and a given radius.
      */
-    private void paintChecker(Graphics g, int x, int y, int r, Color color) {
+    public static void paintChecker(Graphics g, int x, int y, int r, Color color) {
         // We start by drawing the outer and inner edges of the checker.
         g.setColor(color);
         g.fillOval(x - r, y - r, 2 * r, 2 * r);
@@ -566,7 +585,7 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
     /**
      * Draws a die with a given value at desired destination.
      */
-    private void paintDie(Graphics g, int size, Point center, int value) {
+    public static void paintDie(Graphics g, int size, Point center, int value) {
         int r = size / 2 ;
         int spacing = size / 4;
 
@@ -736,7 +755,8 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
         this.target = null;
 
         // Trigger event.
-        this.delegate.onDragged(start, end);
+        DraggedEvent event = new DraggedEvent(this, start, end);
+        this.delegate.onDragged(event);
 
         this.repaint();
     }
@@ -760,3 +780,4 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
     public void mouseExited(MouseEvent e) {
     }
 }
+
