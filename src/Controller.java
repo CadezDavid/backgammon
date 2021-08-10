@@ -62,6 +62,19 @@ public class Controller extends JFrame implements BoardView.Delegate, SettingsVi
     }
 
     @Override
+    public Set<Integer> movable() {
+        HashSet<Integer> points = new HashSet<Integer>();
+        Game game = this.model.getGame();
+
+        int[] checkers = game.getMovableCheckers();
+        for (int i = 0; i < checkers.length; i++) {
+            if (checkers[i] > 0) points.add(i);
+        }
+
+        return points;
+    }
+
+    @Override
     public void onDragged(BoardView.DraggedEvent event) {
         Game game = this.model.getGame();
 

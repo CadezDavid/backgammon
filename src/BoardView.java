@@ -42,6 +42,8 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
     private static final Color WHITE_CHECKER = new Color(255, 232, 222);
     private static final Color BLACK_CHECKER = new Color(51, 46, 44);
     private static final Color CHECKER_EDGE = new Color(128, 116, 111);
+    private static final Color ACTIVE_CHECKER_EDGE  = new Color(255, 100, 100);
+
     private static final Color CHECKER_BACKGROUND = new Color(233, 241, 223);
     private static final Color DROP_COLOR = new Color(75, 75, 75);
     private static final Color TARGET_COLOR = new Color(0, 0, 0);
@@ -64,9 +66,15 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
         Set<Integer> draggable(int start);
 
         /**
+         * Set of all points that may be moved.
+         */
+        Set<Integer> movable();
+
+        /**
          * Event that's triggered when the stone has been dragged to a new location.
          */
         void onDragged(DraggedEvent event);
+
         /**
          * Current dice.
          */
@@ -184,6 +192,8 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
             this.paintPoint(g, i);
         }
 
+        Set<Integer> movable = this.delegate.movable();
+
         // Paint checkers.
         for (int i = 0; i < 26; i++) {
             int checkers = this.delegate.board()[i];
@@ -194,8 +204,8 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
                 checkers -= this.direction;
 
             for (int j = 0; j < Math.abs(checkers); j++) {
-                Point coord = this.getCheckerPosition(i, j);
-                paintChecker(g, coord.x, coord.y, checkerSize / 2, color);
+                Point cord = this.getCheckerPosition(i, j);
+                paintChecker(g, cord.x, cord.y, checkerSize / 2, color, movable.contains(i));
             }
         }
 
@@ -493,12 +503,22 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
     /**
      * Paints a checker at a given location and a given radius.
      */
-    public static void paintChecker(Graphics g, int x, int y, int r, Color color) {
+    public static void paintChecker(Graphics _g, int x, int y, int r, Color color, boolean active) {
+        Graphics2D g = (Graphics2D) _g;
+
         // We start by drawing the outer and inner edges of the checker.
         g.setColor(color);
         g.fillOval(x - r, y - r, 2 * r, 2 * r);
+
         g.setColor(CHECKER_EDGE);
+        if (active) {
+            g.setColor(ACTIVE_CHECKER_EDGE);
+            g.setStroke(new BasicStroke(2));
+        }
         g.drawOval(x - r, y - r, 2 * r, 2 * r);
+
+        // Reset stroke.
+        g.setStroke(new BasicStroke(1));
 
         /**
          * To draw the pattern we switch to the polar system as it's easier to process
@@ -535,12 +555,13 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
             Color pattern = colors[c];
             g.setColor(pattern);
 
-            Graphics2D g2D = (Graphics2D) g;
-            g2D.setStroke(new BasicStroke(1));
-
             g.drawPolyline(xs, ys, precision);
         }
 
+    }
+
+    public static void paintChecker(Graphics g, int x, int y, int r, Color color) {
+        paintChecker(g, x, y, r, color, false);
     }
 
     /**
