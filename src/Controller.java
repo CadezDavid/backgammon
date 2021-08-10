@@ -22,10 +22,9 @@ public class Controller extends JFrame implements BoardView.Delegate, SettingsVi
         this.setDefaultCloseOperation(EXIT_ON_CLOSE);
 
         this.model = new Model();
-
         this.view = new SettingsView(this);
 
-        this.setPreferredSize(this.view.getPreferredSize());
+        this.add(this.view);
     }
 
     // MARK: - Methods
@@ -33,26 +32,24 @@ public class Controller extends JFrame implements BoardView.Delegate, SettingsVi
     /**
      * Starts a new game.
      */
-    void start() {
-        this.view = new BoardView(this);
-
-        this.rerender();
+    public void onStart() {
+        this.rerender(new BoardView(this));
     }
 
-    void stop() {
-        this.view = new SettingsView(this);
-
-        this.rerender();
+    public void onStop() {
+        this.rerender(new SettingsView(this));
     }
 
     /**
      * Recreates the window to present the current view.
      */
-    private void rerender() {
-        this.removeAll();
-        this.add(this.view);
+    private void rerender(JPanel view) {
+        this.getContentPane().remove(this.view);
 
-        this.setPreferredSize(this.view.getPreferredSize());
+        this.view = view;
+
+        this.getContentPane().add(this.view);
+        this.setSize(this.view.getPreferredSize());
 
         this.revalidate();
         this.repaint();

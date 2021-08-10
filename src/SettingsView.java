@@ -11,15 +11,19 @@ import javax.swing.*;
  * This file contains the getting started view.
  */
 
-class SettingsView extends JPanel implements PlayerView.Delegate {
+class SettingsView extends JPanel implements ActionListener, PlayerView.Delegate {
     // Offset from the edge of the screen.
     private static final int PADDING = 75;
+
 
 
     // MARK: - Delegate
 
     public interface Delegate {
-
+        /**
+         * Triggered when the game should start.
+         */
+        void onStart();
     }
 
     // MARK: - Properties
@@ -33,6 +37,7 @@ class SettingsView extends JPanel implements PlayerView.Delegate {
 
     private final PlayerView white;
     private final PlayerView black;
+    private final JButton start;
 
     // MARK: - Constructor
 
@@ -41,25 +46,44 @@ class SettingsView extends JPanel implements PlayerView.Delegate {
 
         this.white = new PlayerView(this);
         this.black = new PlayerView(this);
+        this.start = new JButton("Start");
+
+        // Events
+
+        this.start.addActionListener(this);
 
         // Draw
 
         this.add(this.white);
         this.add(this.black);
+        this.add(this.start);
     }
 
     // MARK: - Accessors
+
+    @Override
+    public Dimension getPreferredSize() {
+        return new Dimension(500, 500);
+    }
 
     // MARK: - View
 
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
+
+//        int width = this.getWidth();
+//        int height = this.getHeight();
+//
+//        this.white.setSize(new Dimension(width / 2, height));
+//        this.black.setSize(new Dimension(width / 2, height));
     }
 
     // MARK: - Events
-
-
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == this.start) this.delegate.onStart();
+    }
 
     @Override
     public String name(PlayerView source) {
@@ -173,6 +197,10 @@ class PlayerView extends JPanel implements PointView.Delegate, CheckerView.Deleg
 
         this.checker = new CheckerView(this);
         this.point = new PointView(this);
+
+        this.checker.setSize(100, 100);
+        this.point.setSize(50, 100);
+
 
         // Draw
         this.add(this.name);
