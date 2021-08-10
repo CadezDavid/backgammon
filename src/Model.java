@@ -161,6 +161,19 @@ class Game {
     }
 
     /**
+     * Returns a 26-items long list telling how many moves there are from each field.
+     */
+    public int[] getMovableCheckers() {
+        int[] movables = new int[26];
+
+        for (int i = 0; i < movables.length; i++) {
+            movables[i] = getMoves(i).size();
+        }
+
+        return movables;
+    }
+
+    /**
      * Tells where the player may move the checkers from the starting point.
      */
     public Set<Integer> getMoves(int start) {
@@ -179,9 +192,6 @@ class Game {
             // Check the bounds.
             if (end < 0) end = 0;
             if (end > 25) end = 25;
-
-            // Check that we are dropping checker on our stones or beating the other player.
-            if (direction * board[end] < 0 && Math.abs(board[end]) > 1) continue;
 
             // Make sure that moves is valid.
             if (!this.isMoveValid(start, end)) continue;
