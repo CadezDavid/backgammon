@@ -82,9 +82,9 @@ class Game {
     public Game() {
         // this.points = new int[]{0, -5, -5, -5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         // 0, 0, 0, 0, 0, 3, 4, 5, 0};
-        this.points = new int[] { 0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -1, -1 };
+        this.points = new int[]{0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -1, -1};
         this.round = 0;
-        this.turns = new int[] { -1, 1 };
+        this.turns = new int[]{-1, 1};
         this.dice = new ArrayList<Integer>();
 
         this.roll();
@@ -168,13 +168,12 @@ class Game {
     /**
      * Tells whether a player can make a move. It has no idea about the dice or
      * anything. It only tells whether the move is strictly valid.
-     *
-     * @param direction Tells the direction of the player.
      */
-    private static boolean isMoveValid(int[] board, int direction, int start, int end) {
-        // Check that we are moving in the right direction.
-        if ((end - start) * direction < 0)
-            return false;
+    private static boolean isMoveValid(int[] board, int start, int end) {
+        if (start == end) return false;
+
+        int diff = end - start;
+        int direction = diff / Math.abs(diff);
 
         // Check that we are taking from the right pile.
         if (getPointDirection(board, start) * direction < 0)
@@ -212,9 +211,9 @@ class Game {
             return true;
         }
 
-        // We can hit the other player.
-        if (board[end] * direction < -1)
-            return false;
+        // We can hit the other player only if it has a single checker there.
+        if (board[end] * direction < 0)
+            return Math.abs(board[end]) == 1;
 
         // Check that direction is respected.
         return board[start] * board[end] >= 0;
@@ -307,7 +306,7 @@ class Game {
         int higher = Collections.max(dice);
         int lower = Collections.min(dice);
 
-        for (int move : new int[] { higher, lower }) {
+        for (int move : new int[]{higher, lower}) {
             int end = start + move * direction;
 
             if (isPossibleMove(points, start, end, new ArrayList<>())) {
@@ -350,7 +349,7 @@ class Game {
         int direction = diff / Math.abs(diff);
 
         // Make sure that moves is valid.
-        if (!isMoveValid(points, direction, start, end))
+        if (!isMoveValid(points, start, end))
             return false;
 
         // Check if this is the last move.
@@ -426,7 +425,7 @@ class Game {
         board[start] -= direction;
 
         // Check if we are still on the board when making a move.
-        if (1 < end && end < 25) {
+        if (0 < end && end < 25) {
             if (board[end] * direction >= 0) {
                 // Regularly move the checker if we are not beating.
                 board[end] += direction;
