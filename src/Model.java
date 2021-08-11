@@ -80,7 +80,7 @@ class Game {
     // MARK: - Constructors
 
     public Game() {
-        this.points = new int[] { 0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -1, -1 };
+        this.points = new int[] { 0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2, 0 };
         this.round = 0;
         this.turns = new int[] { -1, 1 };
         this.dice = new ArrayList<Integer>();
@@ -100,7 +100,7 @@ class Game {
     /**
      * Returns the current dice.
      */
-    public List<Integer> getDice() {
+    public ArrayList<Integer> getDice() {
         return this.dice;
     }
 
