@@ -1,5 +1,11 @@
-import javax.swing.*;
-import java.util.*;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
+
+import javax.swing.JFrame;
+import javax.swing.JPanel;
 
 public class Controller extends JFrame implements BoardView.Delegate, SettingsView.Delegate {
 
@@ -7,9 +13,8 @@ public class Controller extends JFrame implements BoardView.Delegate, SettingsVi
 
     private final Model model;
     /**
-     * View may be anything that conforms to a JPanel. Ideally,
-     * controller doesn't know much about the view itself besides the
-     * re-rendering options and size.
+     * View may be anything that conforms to a JPanel. Ideally, controller doesn't
+     * know much about the view itself besides the re-rendering options and size.
      */
     private JPanel view;
 
@@ -67,7 +72,8 @@ public class Controller extends JFrame implements BoardView.Delegate, SettingsVi
 
         int[] checkers = game.getMovableCheckers();
         for (int i = 0; i < checkers.length; i++) {
-            if (checkers[i] > 0) points.add(i);
+            if (checkers[i] > 0)
+                points.add(i);
         }
 
         return points;
@@ -103,7 +109,6 @@ public class Controller extends JFrame implements BoardView.Delegate, SettingsVi
 
 // MARK: - Intelligence
 
-
 class Intelligence {
 
     private static Random r;
@@ -137,14 +142,54 @@ class Intelligence {
 
     }
 
-    private static int[] randomDice() {
-        int a = r.nextInt(6) + 1;
-        int b = r.nextInt(6) + 1;
-        if (a == b) {
-            return new int[] { a, a, a, a };
+    /**
+     * Method that simulates a random play, but simplifies game logic for speed.
+     */
+    private static int[] makeRandomMoves(int[] points, int direction) {
+        int i = 40;
+        int bar = 25 * (1 - direction) / 2;
+        while (points[bar] != 0 && 0 < i) {
+            int end = direction * (r.nextInt(6) + 1) + bar;
+            if (points[end] * direction >= 0) {
+                points[end] += direction;
+                points[bar] -= direction;
+                i -= 20;
+            } else if (points[end] * direction == -1) {
+                points[end] = direction;
+                points[bar] -= direction;
+                i -= 20;
+            } else
+                i--;
         }
-        return new int[] { a, b };
+        while (0 < i) {
+            int start = r.nextInt(24) + 1;
+            if (points[start] * direction > 0) {
+                int end = direction * (r.nextInt(6) + 1) + start;
+                if (end * direction > 25 * (1 + direction) / 2) {
+                    points[start] -= direction;
+                } else if (points[end] * direction >= 0) {
+                    points[end] += direction;
+                    points[start] -= direction;
+                    i -= 20;
+                } else if (points[end] * direction == -1) {
+                    points[end] = direction;
+                    points[bar] = direction;
+                    i -= 20;
+                }
+            }
+            i--;
+        }
+        return points;
     }
+
+    // private static int[] randomDice() {
+    // int a = r.nextInt(6) + 1;
+    // int b = r.nextInt(6) + 1;
+    // if (a == b) {
+    // return new int[] { a, a, a, a };
+    // }
+    // return new int[] { a, b };
+    // }
 
     /**
      * Tree structure which intelligence uses for MCTS.
