@@ -1,3 +1,4 @@
+import java.lang.reflect.Array;
 import java.util.*;
 
 /**
@@ -63,7 +64,7 @@ class Game {
     /**
      * Currently active dice.
      */
-    private List<Integer> dice;
+    private ArrayList<Integer> dice;
 
     /**
      * Counts the turns in the game.
@@ -116,14 +117,9 @@ class Game {
      * Returns the direction of the point.
      */
     private static int getPointDirection(int[] board, int index) {
-        if (board[index] == 0) return 0;
+//        if (board[index] == 0) return 0;
         return board[index] / Math.abs(board[index]);
     }
-
-    private int getPointDirection(int index) {
-        return getPointDirection(this.points, index);
-    }
-
 
     /**
      * Tells the direction of the player that is currently playing.
@@ -133,9 +129,15 @@ class Game {
     }
 
     /**
-     * Tells whether a player can make a move.
+     * Tells whether a player can make a move. It has no idea about the dice or anything.
+     * It only tells whether the move is strictly valid.
+     *
+     * @param direction Tells the direction of the player.
      */
     private static boolean isMoveValid(int[] board, int direction, int start, int end) {
+        // Check that we are moving in the right direction.
+        if ((end - start) * direction < 0) return false;
+
         // Check that we are taking from the right pile.
         if (getPointDirection(board, start) * direction < 0) return false;
 
@@ -143,21 +145,37 @@ class Game {
         int bar = (1 - direction) / 2 * 25;
         int locked = Math.abs(board[bar]);
 
-        // Check if we are pulling from the bar and if we need to.
+        // Check if we have any checkers locked on the bar.
         if (locked > 0 && bar != start) return false;
 
-        // Check if we are pulling off the board.
-        if (end < 0 || end > 25) return true;
+        // Check if we are moving to an illegal place.
+        if (end < 0 || end > 26) return false;
+
+        // Check if we are bearing off.
+        int home = 25 - bar;
+        if (end == home) {
+            /*
+             * We check every point besides the ones at home
+             * if there's our checker on it. There shouldn't be!
+             *
+             * Player can only bear checkers off the board if all of them are
+             * home.
+             */
+            int first = 7 * (1 - direction) / 2; // 0 or 7
+            int point = 17 + first; // 17 or 24
+
+            for (; first < point; point--) {
+                if (board[point] * direction > 0) return false;
+            }
+
+            return true;
+        }
 
         // We can beat the other player.
         if (board[end] * direction < 0 && Math.abs(board[end]) == 1) return true;
 
         // Check that direction is respected.
         return board[start] * board[end] >= 0;
-    }
-
-    private boolean isMoveValid(int start, int end) {
-        return isMoveValid(this.points, this.getPlayer(), start, end);
     }
 
     /**
@@ -174,55 +192,56 @@ class Game {
     }
 
     /**
-     * Tells where the player may move the checkers from the starting point.
+     * Tells where the player may move the checker from the given starting point
+     * and the current state of the game.
      */
     public Set<Integer> getMoves(int start) {
-        int direction = this.getPointDirection(start);
+        int player = this.getPlayer();
+        return getMoves(this.points, player, this.dice, start);
+    }
 
+    /**
+     * Tells where the player may move the checkers from the starting point.
+     */
+    public static Set<Integer> getMoves(int[] points, int player, ArrayList<Integer> dice, int start) {
         HashSet<Integer> moves = new HashSet<Integer>();
 
-        /**
+        // Check that there's anything to move.
+        if (points[start] == 0) return moves;
+
+        // Calculate the color of the checker we are moving.
+        int direction = getPointDirection(points, start);
+
+        // If the other player is on the move you can't make any moves.
+        if (player * direction < 0) return moves;
+
+        /*
          * We iterate over all dice combinations and check for each
          * combination whether we could make a reasonable move with it.
          */
-        for (int i = 0; i < this.dice.size(); i++) {
-            int end = start + this.dice.get(i) * direction;
-            int[] board = this.points.clone();
+        for (int i = 0; i < dice.size(); i++) {
+            int end = start + direction * dice.get(i);
 
-            // Check the bounds.
-            if (end < 0) end = 0;
-            if (end > 25) end = 25;
+            // Copy the dice and remove the current dice.
+            ArrayList<Integer> rdice = (ArrayList<Integer>) dice.clone();
+            rdice.remove(i);
 
-            // Make sure that moves is valid.
-            if (!this.isMoveValid(start, end)) continue;
+            if (isPossibleMove(points, start, end, rdice)) moves.add(end);
+        }
 
-            // Check if there's only one die left.
-            if (this.dice.size() == 1)  {
-                moves.add(end);
-                continue;
-            }
+        // If we can't make any move here, check if we can make any single move anywhere.
+        // We don't have to check every of the four moves since they are all the same
+        // dice, and we can just repeat the move until we run out of options.
+        if (moves.isEmpty()) {
+            int higher = Collections.max(dice);
+            int lower = Collections.min(dice);
 
-            // Otherwise, make the first move and see if we can make it out.
-            board = move(board, start, end);
+            for (int move : new int[]{higher, lower}) {
+                int end = start + move * direction;
 
-            second:
-            for (int j = 0; j < this.dice.size(); j++) {
-                // We can't repeat the same die.
-                if (j == i) continue;
-
-                // We check for each point with the same orientation whether we can make
-                // a move for remaining number of points.
-                for (int point = 0; point < board.length; point++) {
-                    // Skip points that are not ours.
-                    if (direction * board[point] <= 0) continue;
-
-                    int player = this.getPlayer();
-
-                    // Check if the move is valid.
-                    if (isMoveValid(board, player, point, point + this.dice.get(j) * direction)) {
-                        moves.add(end);
-                        break second;
-                    }
+                if (isPossibleMove(points, start, end, new ArrayList<>())) {
+                    moves.add(end);
+                    break ;
                 }
             }
         }
@@ -231,13 +250,60 @@ class Game {
     }
 
     /**
+     * Tells whether a player could make a given move and use all dice.
+     */
+    private static boolean isPossibleMove(int[] points, int start, int end, ArrayList<Integer> dice) {
+        int diff = end - start;
+        int direction = diff / Math.abs(diff);
+
+        // Make sure that moves is valid.
+        if (!isMoveValid(points, direction, start, end)) return false;
+
+        // Check if this is the last move.
+        if (dice.size() == 0) return true;
+
+        // Otherwise, make the first move and see if we can recursively make it.
+        int[] board = move(points.clone(), start, end);
+
+        for (int j = 0; j < dice.size(); j++) {
+            int die = dice.get(j);
+
+            // We check for each point with the same orientation whether we can make
+            // a move for remaining number of points.
+            for (int point = 0; point < board.length; point++) {
+                // Skip points that are not ours.
+                if (direction * board[point] <= 0) continue;
+
+                // Copy the dice and remove the current dice.
+                ArrayList<Integer> rdice = (ArrayList) dice.clone();
+                rdice.remove(j);
+
+                // Check if we can meaningfully make other moves.
+                if (isPossibleMove(board, point, point + die * direction, rdice)) return true;
+            }
+        }
+
+        return false;
+    }
+
+
+    /**
      * Rolls the dice.
      */
     private void roll() {
         this.dice = new ArrayList<Integer>();
 
+        // Roll the dice.
         for (int i = 0; i < 2; i++) {
             this.dice.add((int) Math.ceil(Math.random() * 6));
+        }
+
+        // Double the points on combo.
+        if (dice.get(0).equals(dice.get(1))) {
+            int val = dice.get(0);
+
+            dice.add(val);
+            dice.add(val);
         }
 
         System.out.println(this.dice);
@@ -259,7 +325,7 @@ class Game {
         // Remove the checker from the starting field.
         board[start] -= direction;
 
-        // Check that we are still on the board when making a move.
+        // Check if we are still on the board when making a move.
         if (1 < end && end < 25) {
             if (board[end] * direction >= 0) {
                 // Regularly move the checker if we are not beating.
