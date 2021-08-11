@@ -1,14 +1,7 @@
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
+import javax.swing.*;
+import java.util.*;
 
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-
-@SuppressWarnings("serial")
-public class Controller extends JFrame implements BoardViewDelegate, SettingsViewDelegate {
+public class Controller extends JFrame implements BoardView.Delegate, SettingsView.Delegate {
 
     // MARK: - State
 
@@ -63,8 +56,8 @@ public class Controller extends JFrame implements BoardViewDelegate, SettingsVie
 
     @Override
     public Set<Integer> draggable(int start) {
-        Model model = this.model;
-        return model.getAllPlays(start);
+        Game game = this.model.getGame();
+        return game.getMoves(start);
     }
 
     @Override
@@ -91,21 +84,16 @@ public class Controller extends JFrame implements BoardViewDelegate, SettingsVie
 
     @Override
     public int[] dice() {
-        Model model = this.model;
-        int[] dice = new int[model.getDice().size()];
-        for (int i = 0; i < model.getDice().size(); i++) {
-            dice[i] = model.getDice().get(i);
-        }
-        return dice;
+        Game game = this.model.getGame();
+        return game.getDice();
     }
 
     @Override
     public int[] board() {
-        Model model = this.model;
-        return model.getBoard();
+        Game game = this.model.getGame();
+        return game.getBoard();
     }
 }
-
 
 // MARK: - Intelligence
 
