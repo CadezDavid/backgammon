@@ -1,3 +1,4 @@
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
@@ -11,26 +12,54 @@ public class Controller extends JFrame implements BoardViewDelegate, SettingsVie
 
     // MARK: - State
 
-    private Model model;
+    private final Model model;
     /**
-     * View may be anything that conforms to a JPanel. Ideally, controller doesn't
-     * know much about the view itself besides the rerendering options and size.
+     * View may be anything that conforms to a JPanel. Ideally,
+     * controller doesn't know much about the view itself besides the
+     * re-rendering options and size.
      */
     private JPanel view;
 
     // MARK: - Constructor
 
     public Controller() {
+        super("Backgammon");
+
         this.setDefaultCloseOperation(EXIT_ON_CLOSE);
 
         this.model = new Model();
-        this.view = new BoardView(this);
+        this.view = new SettingsView(this);
 
         this.add(this.view);
-        this.setPreferredSize(this.view.getPreferredSize());
     }
 
     // MARK: - Methods
+
+    /**
+     * Starts a new game.
+     */
+    public void onStart() {
+        this.render(new BoardView(this));
+    }
+
+    public void onStop() {
+        this.render(new SettingsView(this));
+    }
+
+    /**
+     * Recreates the window to present the current view.
+     */
+    private void render(JPanel view) {
+        this.getContentPane().remove(this.view);
+
+        this.view = view;
+
+        this.getContentPane().add(this.view);
+        this.setSize(this.view.getPreferredSize());
+
+        this.revalidate();
+        this.repaint();
+    }
 
     @Override
     public Set<Integer> draggable(int start) {
@@ -39,9 +68,25 @@ public class Controller extends JFrame implements BoardViewDelegate, SettingsVie
     }
 
     @Override
-    public void onDragged(int start, int end) {
-        Model model = this.model;
-        model.move(new UtilitiesMove(start, end));
+    public Set<Integer> movable() {
+        HashSet<Integer> points = new HashSet<Integer>();
+        Game game = this.model.getGame();
+
+        int[] checkers = game.getMovableCheckers();
+        for (int i = 0; i < checkers.length; i++) {
+            if (checkers[i] > 0) points.add(i);
+        }
+
+        return points;
+    }
+
+    @Override
+    public void onDragged(BoardView.DraggedEvent event) {
+        Game game = this.model.getGame();
+
+        if (event.getSource() == this.view) {
+            game.move(event.start, event.end);
+        }
     }
 
     @Override
@@ -60,6 +105,10 @@ public class Controller extends JFrame implements BoardViewDelegate, SettingsVie
         return model.getBoard();
     }
 }
+
+
+// MARK: - Intelligence
+
 
 class Intelligence {
 
