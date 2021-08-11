@@ -35,6 +35,26 @@ public class Controller extends JFrame implements BoardView.Delegate, SettingsVi
         this.render(new BoardView(this));
     }
 
+    @Override
+    public Player white() {
+        return this.model.white;
+    }
+
+    @Override
+    public void onWhiteChanged(Player white) {
+        this.model.white = white;
+    }
+
+    @Override
+    public Player black() {
+        return this.model.black;
+    }
+
+    @Override
+    public void onBlackChanged(Player black) {
+        this.model.black = black;
+    }
+
     public void onStop() {
         this.render(new SettingsView(this));
     }

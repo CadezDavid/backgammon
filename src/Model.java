@@ -1,5 +1,7 @@
+import java.awt.*;
 import java.lang.reflect.Array;
 import java.util.*;
+import java.util.List;
 
 /**
  * Model represents the state of the app. Everything that persists for a longer
@@ -18,17 +20,10 @@ class Model {
     // MARK: - Constructor
 
     public Model() {
-        this.white = new Player();
-        this.black = new Player();
+        this.white = new Player("WHITE", Player.Type.HUMAN, Color.WHITE, Color.WHITE);
+        this.black = new Player("BLACK", Player.Type.HUMAN, Color.BLACK, Color.BLACK);
 
         this.game = new Game();
-    }
-
-    public Model(String nameBP, String nameWP, Player.Type typeBP, Player.Type typeWP) {
-        this.game = new Game();
-
-        this.black = new Player(nameWP, typeWP);
-        this.white = new Player(nameBP, typeBP);
     }
 
     // MARK: - Methods
@@ -403,8 +398,6 @@ class Game {
             dice.add(val);
             dice.add(val);
         }
-
-        System.out.println(this.dice);
     }
 
     /**
@@ -483,16 +476,26 @@ class Player {
     /**
      * Tells the name of the player that we display in the game.
      */
-    private final String name;
+    public String name;
 
     /**
      * Tells whether a player is a human or a computer.
      */
-    private final Type type;
+    public Type type;
 
     enum Type {
         COMPUTER, HUMAN
     }
+
+    /**
+     * The color of the checker on the board.
+     */
+    public Color checker;
+
+    /**
+     * Color of the point of this player.
+     */
+    public Color point;
 
     // MARK: - Constructor
 
@@ -501,18 +504,10 @@ class Player {
         this.type = Type.HUMAN;
     }
 
-    public Player(String name, Type type) {
+    public Player(String name, Type type, Color checker, Color point) {
         this.name = name;
         this.type = type;
-    }
-
-    // MARK: - Accessors
-
-    public String getName() {
-        return name;
-    }
-
-    public Type getType() {
-        return type;
+        this.checker = checker;
+        this.point = point;
     }
 }
