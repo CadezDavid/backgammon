@@ -99,14 +99,8 @@ class Game {
     /**
      * Returns the current dice.
      */
-    public int[] getDice() {
-        int[] dice = new int[this.dice.size()];
-
-        for (int i = 0; i < this.dice.size(); i++) {
-            dice[i] = this.dice.get(i);
-        }
-
-        return dice;
+    public List<Integer> getDice() {
+        return this.dice;
     }
 
 

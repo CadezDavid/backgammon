@@ -85,7 +85,13 @@ public class Controller extends JFrame implements BoardView.Delegate, SettingsVi
     @Override
     public int[] dice() {
         Game game = this.model.getGame();
-        return game.getDice();
+        int[] dice = new int[game.getDice().size()];
+
+        for (int i = 0; i < game.getDice().size(); i++) {
+            dice[i] = game.getDice().get(i);
+        }
+
+        return dice;
     }
 
     @Override
