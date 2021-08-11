@@ -72,7 +72,7 @@ class Game {
     private int round;
 
     /**
-     * Tells the order of the turns by direction (i.e. positive negative).
+     * Tells the order of the players by direction (i.e. positive negative).
      */
     private final int[] turns;
 
@@ -110,6 +110,38 @@ class Game {
     }
 
 
+    enum State {
+        IN_PROGRESS, WIN_BLACK, WIN_WHITE
+    }
+
+    /**
+     * Tells the current state of the game.
+     */
+    public State getState() {
+        // Remaining checkers on the board.
+        int whites = 0;
+        int blacks = 0;
+
+        for (int i = 0; i < this.points.length; i++) {
+            int checkers = this.points[i];
+
+            if (checkers < 0) whites -= checkers;
+            else blacks += checkers;
+        }
+
+        // Calculate the winner.
+        if (whites == 0) return State.WIN_WHITE;
+        if (blacks == 0) return State.WIN_BLACK;
+        return State.IN_PROGRESS;
+    }
+
+    /**
+     * Tells the direction of the player that is currently playing.
+     */
+    public int getPlayer() {
+        return this.turns[this.round % 2];
+    }
+
     // MARK: - Methods
 
 
@@ -119,13 +151,6 @@ class Game {
     private static int getPointDirection(int[] board, int index) {
 //        if (board[index] == 0) return 0;
         return board[index] / Math.abs(board[index]);
-    }
-
-    /**
-     * Tells the direction of the player that is currently playing.
-     */
-    private int getPlayer() {
-        return this.turns[this.round % 2];
     }
 
     /**
@@ -241,7 +266,7 @@ class Game {
 
                 if (isPossibleMove(points, start, end, new ArrayList<>())) {
                     moves.add(end);
-                    break ;
+                    break;
                 }
             }
         }
