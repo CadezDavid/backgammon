@@ -97,7 +97,7 @@ public class Controller extends JFrame implements BoardView.Delegate, SettingsVi
     @Override
     public int[] board() {
         Game game = this.model.getGame();
-        return game.getBoard();
+        return game.getPoints();
     }
 }
 

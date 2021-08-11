@@ -92,7 +92,7 @@ class Game {
     /**
      * Returns the current board.
      */
-    public int[] getBoard() {
+    public int[] getPoints() {
         return this.points;
     }
 
