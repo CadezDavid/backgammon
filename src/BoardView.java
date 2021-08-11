@@ -220,7 +220,7 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
             int saved = CHECKERS - this.remainingCheckers(turn);
 
             for (int i = 0; i < saved; i++) {
-                int x = center - (saved * checkerSize / 4) + i * checkerSize;
+                int x = center - (saved * checkerSize / 2) + checkerSize / 2 + i * checkerSize;
                 int y = ((1 - turn) / 2 * this.getHeight()) + (turn * PADDING / 2);
 
                 paintChecker(g, x, y, checkerSize / 2, color);

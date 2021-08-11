@@ -79,6 +79,7 @@ class Game {
     // MARK: - Constructors
 
     public Game() {
+//        this.points = new int[]{0, -5, -5, -5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 4, 5, 0};
         this.points = new int[]{0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -1, -1};
         this.round = 0;
         this.turns = new int[]{-1, 1};
@@ -109,15 +110,15 @@ class Game {
     }
 
     /**
-     * Tells the current state of the game.
+     * Tells the state of the game from a given board.
      */
-    public State getState() {
+    public static State getState(int[] points) {
         // Remaining checkers on the board.
         int whites = 0;
         int blacks = 0;
 
-        for (int i = 0; i < this.points.length; i++) {
-            int checkers = this.points[i];
+        for (int i = 0; i < points.length; i++) {
+            int checkers = points[i];
 
             if (checkers < 0) whites -= checkers;
             else blacks += checkers;
@@ -127,6 +128,14 @@ class Game {
         if (whites == 0) return State.WIN_WHITE;
         if (blacks == 0) return State.WIN_BLACK;
         return State.IN_PROGRESS;
+
+    }
+
+    /**
+     * Tells the current state of the game.
+     */
+    public State getState() {
+        return getState(this.points);
     }
 
     /**
@@ -136,8 +145,6 @@ class Game {
         return this.turns[this.round % 2];
     }
 
-    // MARK: - Methods
-
 
     /**
      * Returns the direction of the point.
@@ -145,6 +152,13 @@ class Game {
     private static int getPointDirection(int[] board, int index) {
 //        if (board[index] == 0) return 0;
         return board[index] / Math.abs(board[index]);
+    }
+
+    /**
+     * Tells the index of the given player's bar on the board.
+     */
+    private static int getPlayerBar(int direction) {
+        return (1 - direction) / 2 * 25;
     }
 
     /**
@@ -161,14 +175,14 @@ class Game {
         if (getPointDirection(board, start) * direction < 0) return false;
 
         // Number of checkers locked on the bar.
-        int bar = (1 - direction) / 2 * 25;
+        int bar = getPlayerBar(direction);
         int locked = Math.abs(board[bar]);
 
         // Check if we have any checkers locked on the bar.
         if (locked > 0 && bar != start) return false;
 
         // Check if we are moving to an illegal place.
-        if (end < 0 || end > 26) return false;
+        if (end < 0 || end > 25) return false;
 
         // Check if we are bearing off.
         int home = 25 - bar;
@@ -226,7 +240,7 @@ class Game {
         HashSet<Integer> moves = new HashSet<Integer>();
 
         // Check that there's anything to move.
-        if (points[start] == 0) return moves;
+        if (points[start] == 0 || dice.size() == 0) return moves;
 
         // Calculate the color of the checker we are moving.
         int direction = getPointDirection(points, start);
@@ -248,6 +262,8 @@ class Game {
             if (isPossibleMove(points, start, end, rdice)) moves.add(end);
         }
 
+        // In rare cases, we might have to calculate more moves.
+        if (!moves.isEmpty()) return moves;
 
         /*
          * Check if we can make any move anywhere. If we find a move we can make
@@ -272,24 +288,40 @@ class Game {
          * We don't have to check every of the four moves since they are all the same
          * dice, and we can just repeat the move until we run out of options.
          */
-        if (moves.isEmpty() && dice.size() > 0) {
-            int higher = Collections.max(dice);
-            int lower = Collections.min(dice);
+        int higher = Collections.max(dice);
+        int lower = Collections.min(dice);
 
-            for (int move : new int[]{higher, lower}) {
-                int end = start + move * direction;
+        for (int move : new int[]{higher, lower}) {
+            int end = start + move * direction;
 
-                if (isPossibleMove(points, start, end, new ArrayList<>())) {
-                    moves.add(end);
-                    break;
-                }
+            if (isPossibleMove(points, start, end, new ArrayList<>())) {
+                moves.add(end);
+                break;
             }
         }
 
+        if (!moves.isEmpty()) return moves;
+
+        /*
+         * Lastly, we check if there are any checkers that we can bear off but are
+         * closer to the edge than our dice. We figure out where the current player's
+         * bar is and move away from home to the bar to figure out the furthest checker.
+         */
+        int maximum = Collections.max(dice);
+
+        int bar = getPlayerBar(direction);
+        int home = 25 - bar;
+        int furthest = home;
+
+        for (int i = home; bar * direction < i * direction; i -= direction) {
+            if (points[i] * direction > 0) furthest = i;
+        }
+
+        int distance = Math.abs(home - start);
+        if (Math.abs(furthest - home) == distance  && distance < maximum) moves.add(home);
+
         return moves;
     }
-
-    // todo: check if we are bearing off the furthest checker
 
     /**
      * Tells whether a player could make a given move and use all dice.
@@ -328,6 +360,8 @@ class Game {
         return false;
     }
 
+
+    // MARK: - Methods
 
     /**
      * Rolls the dice.
@@ -385,17 +419,34 @@ class Game {
         return board;
     }
 
+    /**
+     * Performs a moves on a board and takes out the used die.
+     */
     public void move(int start, int end) {
+        int moves = Arrays.stream(this.getMovableCheckers()).sum();
+
+        if (moves == 0) {
+            this.round++;
+            this.roll();
+            return;
+        }
+
+        if (start == end) return;
+
         this.points = move(this.points, start, end);
 
         // Update the dice.
         Integer die = Math.abs(end - start);
-        this.dice.remove(die);
+        if (!this.dice.remove(die)) {
+            // Remove the largest die since we took the checker off the board
+            // which was closer than our dice.
+            Integer maximum = Collections.max(this.dice);
+            this.dice.remove(maximum);
+        }
 
-        int moves = Arrays.stream(this.getMovableCheckers()).sum();
 
         // New turn.
-        if (this.dice.size() == 0 || moves == 0) {
+        if (this.dice.size() == 0) {
             this.round++;
             this.roll();
         }
