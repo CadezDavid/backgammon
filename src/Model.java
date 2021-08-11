@@ -254,10 +254,31 @@ class Game {
             if (isPossibleMove(points, start, end, rdice)) moves.add(end);
         }
 
-        // If we can't make any move here, check if we can make any single move anywhere.
-        // We don't have to check every of the four moves since they are all the same
-        // dice, and we can just repeat the move until we run out of options.
-        if (moves.isEmpty()) {
+
+        /*
+         * Check if we can make any move anywhere. If we find a move we can make
+         * we should just return what we have found so far.
+         */
+        for (int i = 0; i < points.length; i++) {
+            if (points[i] == 0) continue;
+
+            for (int j = 0; j < dice.size(); j++) {
+                int end = i + direction * dice.get(j);
+
+                // Copy the dice and remove the current dice.
+                ArrayList<Integer> rdice = (ArrayList<Integer>) dice.clone();
+                rdice.remove(j);
+
+                if (isPossibleMove(points, i, end, rdice)) return moves;
+            }
+        }
+
+        /*
+         * If we can't make any move here, check if we can make any single move anywhere.
+         * We don't have to check every of the four moves since they are all the same
+         * dice, and we can just repeat the move until we run out of options.
+         */
+        if (moves.isEmpty() && dice.size() > 0) {
             int higher = Collections.max(dice);
             int lower = Collections.min(dice);
 
@@ -273,6 +294,8 @@ class Game {
 
         return moves;
     }
+
+    // todo: check if we are bearing off the furthest checker
 
     /**
      * Tells whether a player could make a given move and use all dice.
@@ -320,6 +343,7 @@ class Game {
 
         // Roll the dice.
         for (int i = 0; i < 2; i++) {
+//            this.dice.add(6);
             this.dice.add((int) Math.ceil(Math.random() * 6));
         }
 
@@ -367,7 +391,6 @@ class Game {
         return board;
     }
 
-    // todo when overflowing!
     public void move(int start, int end) {
         this.points = move(this.points, start, end);
 
@@ -375,8 +398,10 @@ class Game {
         Integer die = Math.abs(end - start);
         this.dice.remove(die);
 
+        int moves = Arrays.stream(this.getMovableCheckers()).sum();
+
         // New turn.
-        if (this.dice.size() == 0) {
+        if (this.dice.size() == 0 || moves == 0) {
             this.round++;
             this.roll();
         }
