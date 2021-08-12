@@ -146,7 +146,7 @@ class Game {
      * Returns the direction of the point.
      */
     private static int getPointDirection(int[] board, int index) {
-        // if (board[index] == 0) return 0;
+        if (board[index] == 0) return 0;
         return board[index] / Math.abs(board[index]);
     }
 

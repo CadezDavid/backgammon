@@ -1,11 +1,13 @@
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
+import javax.naming.directory.SearchResult;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
@@ -32,15 +34,6 @@ public class Controller extends JFrame implements BoardView.Delegate, SettingsVi
 
         this.add(this.view);
 
-        Intelligence i = new Intelligence();
-
-        Game game = model.getGame();
-
-        for (Move move : i.getMoves(game.getPoints(), game.getPlayer(), game.getDice())) {
-            System.out.print(move.getStartPoint());
-            System.out.print(move.getEndPoint());
-            System.out.println("\n");
-        }
     }
 
     // MARK: - Methods
@@ -96,7 +89,13 @@ public class Controller extends JFrame implements BoardView.Delegate, SettingsVi
         Game game = this.model.getGame();
 
         if (event.getSource() == this.view) {
-            game.move(event.start, event.end);
+            // game.move(event.start, event.end);
+        }
+
+        Intelligence i = new Intelligence();
+        Set<Move> moves = i.getMoves(game.getPoints().clone(), game.getPlayer(), game.getDice());
+        for (Move move : moves) {
+            game.move(move.getStartPoint(), move.getEndPoint());
         }
     }
 
@@ -131,16 +130,16 @@ class Intelligence {
     }
 
     public Set<Move> getMoves(int[] points, int direction, ArrayList<Integer> dice) {
-        long startTime = System.currentTimeMillis();
         Set<Set<Move>> allMoves = allMovesFromDice(points, direction, dice);
         tree = new Node(points, null, 0);
         for (Set<Move> moves : allMoves) {
             tree.addChild(new Node(move(points, moves), moves, 1));
         }
-        while (System.currentTimeMillis() < startTime + 2 * 10 * 10 * 10) {
+        int k = 10000;
+        while (k > 0) {
             tree.search();
+            k--;
         }
-        System.out.println(tree.children);
         return tree.bestChild().getMoves();
     }
 
@@ -196,6 +195,9 @@ class Intelligence {
         int opponentsBar = 25 * (1 + direction) / 2;
         Set<Set<Move>> allMoves = new HashSet<Set<Move>>();
         allMoves.add(new HashSet<Move>());
+        if (dice.isEmpty()) {
+            return allMoves;
+        }
 
         for (int start = bar; start * direction < opponentsBar; start += direction) {
             for (Integer end : getMoves(points, direction, dice, start)) {
@@ -482,7 +484,7 @@ class Intelligence {
         /**
          * Children of this node. They are populated only when node is expanded.
          */
-        private List<Node> children;
+        private Set<Node> children;
 
         private int depth;
 
@@ -491,7 +493,7 @@ class Intelligence {
         public Node(int[] points, Set<Move> moves, int depth) {
             this.points = points;
             this.moves = moves;
-            this.children = new LinkedList<Node>();
+            this.children = new HashSet<Node>();
             this.depth = depth;
         }
 
@@ -507,9 +509,11 @@ class Intelligence {
         }
 
         public Node bestChild() {
-            double max = 0;
-            Node best = children.get(0);
-            for (Node child : children) {
+            Iterator<Node> iter = children.iterator();
+            Node best = iter.next();
+            double max = UCT(this, best);
+            while (iter.hasNext()) {
+                Node child = iter.next();
                 double uct = UCT(this, child);
                 if (max < uct) {
                     best = child;
@@ -520,22 +524,55 @@ class Intelligence {
         }
 
         public boolean search() {
-            if (this.depth > 300) {
+            if (this.depth > 500) {
                 return false;
             }
             Node child;
-            if (children.isEmpty()) {
-                Set<Move> moves = makeRandomMoves(points, direction);
-                child = new Node(move(points, moves), moves, this.depth + 1);
-            } else {
-                child = bestChild();
-            }
+            Set<Move> moves = makeRandomMoves(points, direction);
+            child = new Node(move(points, moves), moves, this.depth + 1);
             boolean yield = child.search();
             if (yield) {
                 wins++;
             }
             all++;
             return yield;
+        }
+
+        public boolean preSearch() {
+            if (children.isEmpty()) {
+                expand();
+                return search();
+            } else {
+                Node child = bestChild();
+                return child.preSearch();
+            }
+        }
+
+        private void expand() {
+            int bar = 25 * (1 - direction) / 2;
+            int opponentsBar = 25 * (1 + direction) / 2;
+            Set<Node> children = new HashSet<Node>();
+
+            for (int start1 = bar; start1 * direction < opponentsBar; start1 += direction) {
+                for (int end1 = start1; end1 * direction < opponentsBar + 5; end1 += direction) {
+                    if (isMoveValid(points, direction, start1, end1)) {
+                        int[] newPoints = move(points.clone(), start1, end1);
+                        for (int start2 = bar; start2 * direction < opponentsBar; start2 += direction) {
+                            for (int end2 = start2; end2 * direction < opponentsBar + 5; end2 += direction) {
+                                if (isMoveValid(newPoints, direction, start2, end2)) {
+                                    int[] p = move(newPoints.clone(), start2, end2);
+                                    Set<Move> moves = new HashSet<Move>();
+                                    moves.add(new Move(start1, end1));
+                                    moves.add(new Move(start2, end2));
+                                    children.add(new Node(p, moves, this.depth + 1));
+                                }
+                            }
+                        }
+                    }
+
+                }
+            }
+            this.children = children;
         }
 
         public int[] getPoints() {
@@ -550,7 +587,7 @@ class Intelligence {
             return wins;
         }
 
-        public List<Node> getChildren() {
+        public Set<Node> getChildren() {
             return children;
         }
 
