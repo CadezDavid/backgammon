@@ -13,7 +13,6 @@ import javax.swing.JPanel;
  * This file contains everything related to drawing the board.
  */
 
-
 class BoardView extends JPanel implements MouseListener, MouseMotionListener {
     // Offset from the edge of the screen.
     private static final int PADDING = 75;
@@ -34,7 +33,6 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
     private static final Color BOARD_BACKGROUND = new Color(245, 126, 51);
     private static final Color BOARD_EDGES = new Color(167, 100, 84);
 
-
     private static final Color CHECKER_EDGE = new Color(128, 116, 111);
     private static final Color ACTIVE_CHECKER_EDGE = new Color(100, 255, 100);
     private static final Color CHECKER_BACKGROUND = new Color(233, 241, 223);
@@ -49,7 +47,6 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
     private static final Color VICTORY_COLOR = new Color(250, 230, 50);
 
     // MARK: - Delegate
-
 
     public interface Delegate {
         /**
@@ -135,8 +132,8 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
      */
     private Set<Integer> drops;
     /**
-     * The point that we may want to drop the checker on. You may assume that it is a
-     * point that is also in drops variable.
+     * The point that we may want to drop the checker on. You may assume that it is
+     * a point that is also in drops variable.
      */
     private Integer target;
 
@@ -190,7 +187,6 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
             }
         }
 
-
         // ----------------------------------------------
 
         // Pain the board with the bar.
@@ -227,7 +223,7 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
         // Paint the checkers players have borne off the board.
         int center = this.getWidth() / 2;
 
-        for (int turn : new int[]{-1, 1}) {
+        for (int turn : new int[] { -1, 1 }) {
             Color color = this.getCheckerColor(turn);
 
             int saved = CHECKERS - this.remainingCheckers(turn);
@@ -246,7 +242,8 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
         if (this.drops != null) {
             for (Integer drop : drops) {
                 // We don't show markers on the bar as you can't move checker there.
-                if (drop == 0 || drop == 25) continue;
+                if (drop == 0 || drop == 25)
+                    continue;
 
                 // Otherwise, we draw the marker.
                 boolean targeted = drop.equals(this.target);
@@ -295,7 +292,8 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
         Game.State state = this.delegate.state();
 
         // Don't draw anything while in progress.
-        if (state == Game.State.IN_PROGRESS) return;
+        if (state == Game.State.IN_PROGRESS)
+            return;
 
         Dimension size = new Dimension(width / 3, height / 5);
 
@@ -411,10 +409,10 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
         }
 
         // Each point has an internal color and a light shading over the border.
-        g.fillPolygon(new int[]{x1, x2, x3}, new int[]{y1, y2, y3}, 3);
+        g.fillPolygon(new int[] { x1, x2, x3 }, new int[] { y1, y2, y3 }, 3);
 
         g.setColor(BOARD_EDGES);
-        g.drawPolygon(new int[]{x1, x2, x3}, new int[]{y1, y2, y3}, 3);
+        g.drawPolygon(new int[] { x1, x2, x3 }, new int[] { y1, y2, y3 }, 3);
     }
 
     /**
@@ -592,7 +590,7 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
          * To draw the pattern we switch to the polar system as it's easier to process
          * values there.
          */
-        Color[] colors = {new Color(242, 56, 90), new Color(245, 165, 3), new Color(54, 177, 191, 75)};
+        Color[] colors = { new Color(242, 56, 90), new Color(245, 165, 3), new Color(54, 177, 191, 75) };
         int precision = 420;
         int leaves = 6;
 
@@ -637,7 +635,8 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
      */
     private void paintDrop(Graphics g, int point, boolean targeted) {
         // Make sure we are on the board when drawing.
-        if (point < 1 || 25 < point) return;
+        if (point < 1 || 25 < point)
+            return;
 
         int size = this.getCheckerSize() / 2;
 
@@ -657,15 +656,16 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
     }
 
     /**
-     * Returns the number of checkers that are still on the board
-     * with the given direction.
+     * Returns the number of checkers that are still on the board with the given
+     * direction.
      */
     private int remainingCheckers(int direction) {
         int checkers = 0;
         int[] board = this.delegate.board();
 
         for (int i = 0; i < board.length; i++) {
-            if (direction * board[i] >= 0) checkers += direction * board[i];
+            if (direction * board[i] >= 0)
+                checkers += direction * board[i];
         }
 
         return checkers;
@@ -726,7 +726,7 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
         // Draw dots.
         g.setColor(DOTS_COLOR);
         for (Point p : points) {
-            g.drawOval(p.x, p.y, 2, 2);
+            g.fillOval(p.x - 2, p.y - 2, 4, 4);
         }
     }
 
@@ -776,7 +776,6 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
         int width = this.getWidth();
         int height = this.getHeight();
 
-
         /**
          * The distance of the closes droppable point.
          */
@@ -787,8 +786,8 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
          * Check if mouse is out of board bounds (i.e. dragging out) and consider the
          * direction of the dragged stone to see which side is pulling out.
          *
-         * If white is bearing, it should drag to 0. Conversely, black should drag to 25.
-         * Since black's direction is positive (1), we can get to 25 as 1 * 25.
+         * If white is bearing, it should drag to 0. Conversely, black should drag to
+         * 25. Since black's direction is positive (1), we can get to 25 as 1 * 25.
          */
         if (mouse.x < PADDING || mouse.y < PADDING || mouse.x > width - PADDING || mouse.y > height - PADDING) {
             point = (1 + direction) / 2 * 25;
@@ -865,4 +864,3 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
     public void mouseExited(MouseEvent e) {
     }
 }
-
