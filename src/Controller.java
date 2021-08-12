@@ -15,7 +15,7 @@ public class Controller extends JFrame implements ActionListener, BoardView.Dele
      */
     private JPanel view;
 
-    private JMenuItem menuItemStartGame;
+    private final JMenuItem menuItemStartGame;
 
     // MARK: - Constructor
 

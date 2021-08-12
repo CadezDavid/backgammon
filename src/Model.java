@@ -84,7 +84,7 @@ class Game {
     public Game() {
         // this.points = new int[]{0, -5, -5, -5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         // 0, 0, 0, 0, 0, 3, 4, 5, 0};
-        this.points = new int[]{0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -1, -1};
+        this.points = new int[]{0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2, 0};
         this.round = 0;
         this.turns = new int[]{-1, 1};
         this.dice = new ArrayList<Integer>();
@@ -104,7 +104,7 @@ class Game {
     /**
      * Returns the current dice.
      */
-    public List<Integer> getDice() {
+    public ArrayList<Integer> getDice() {
         return this.dice;
     }
 
@@ -156,7 +156,7 @@ class Game {
      * Returns the direction of the point.
      */
     private static int getPointDirection(int[] board, int index) {
-        // if (board[index] == 0) return 0;
+        if (board[index] == 0) return 0;
         return board[index] / Math.abs(board[index]);
     }
 
@@ -171,7 +171,7 @@ class Game {
      * Tells whether a player can make a move. It has no idea about the dice or
      * anything. It only tells whether the move is strictly valid.
      */
-    private static boolean isMoveValid(int[] board, int start, int end) {
+    public static boolean isMoveValid(int[] board, int start, int end) {
         if (start == end) return false;
 
         int diff = end - start;
