@@ -111,6 +111,29 @@ class Computer {
         return allMoves;
     }
 
+    public static Set<Node> expand(int[] points, int direction) {
+        Set<Set<Move>> allMoves = new HashSet<Set<Move>>();
+
+        for (int a = 1; a < 7; a++) {
+            for (int b = a; b < 7; b++) {
+                ArrayList<Integer> dice = new ArrayList<Integer>();
+                dice.add(a);
+                dice.add(b);
+                if (a == b) {
+                    dice.add(a);
+                    dice.add(a);
+                }
+                allMoves.addAll(allMovesFromDice(points, direction, dice));
+            }
+        }
+
+        Set<Node> children = new HashSet<Node>();
+        for (Set<Move> moves : allMoves) {
+            children.add(new Node(moves));
+        }
+        return children;
+    }
+
     private static boolean result(int[] points, int direction) {
         for (int i = 0; i < 26; i++) {
             if (points[i] * direction > 0) {
@@ -128,12 +151,12 @@ class Computer {
     }
 
     /**
-     * Tree structure which intelligence uses for MCTS.
+     * Tree structure which computer uses for MCTS.
      */
     static class Node {
 
         /**
-         * Respresents moves that were made from parent node to this node.
+         * Represents moves that were made from parent node to this node.
          */
         private Set<Move> moves;
 
@@ -186,55 +209,25 @@ class Computer {
         }
 
         public boolean search(int[] points, int direction) {
-            if (result(points, 1)) {
-                return false;
+            if (result(points, direction)) {
+                return true;
             }
             Node child;
             Set<Move> moves = makeRandomMoves(points, direction);
             points = move(points, moves);
             child = new Node(moves);
             boolean yield = child.search(points, direction * -1);
-            if (yield) {
-                wins++;
-            }
-            all++;
             return yield;
         }
 
         public boolean preSearch(int[] points, int direction) {
             if (children.isEmpty()) {
-                expand(points, direction);
+                children = Computer.expand(points, direction);
                 return search(points, -1 * direction);
             } else {
                 Node child = bestChild();
-                return child.preSearch(move(points, child.getMoves()),-1 * direction);
+                return child.preSearch(move(points, child.getMoves()), -1 * direction);
             }
-        }
-
-        private void expand(int[] points, int direction) {
-            int bar = 25 * (1 - direction) / 2;
-            int opponentsBar = 25 * (1 + direction) / 2;
-            Set<Node> children = new HashSet<Node>();
-
-            for (int start1 = bar; start1 * direction < opponentsBar; start1 += direction) {
-                for (int end1 = start1; end1 * direction < opponentsBar + 5; end1 += direction) {
-                    if (Game.isMoveValid(points, start1, end1)) {
-                        int[] newPoints = Game.move(points.clone(), start1, end1);
-                        for (int start2 = bar; start2 * direction < opponentsBar; start2 += direction) {
-                            for (int end2 = start2; end2 * direction < opponentsBar + 5; end2 += direction) {
-                                if (Game.isMoveValid(newPoints, start2, end2)) {
-                                    Set<Move> moves = new HashSet<Move>();
-                                    moves.add(new Move(start1, end1));
-                                    moves.add(new Move(start2, end2));
-                                    children.add(new Node(moves));
-                                }
-                            }
-                        }
-                    }
-
-                }
-            }
-            this.children = children;
         }
 
         public int getAll() {

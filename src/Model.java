@@ -1,7 +1,9 @@
-import java.awt.*;
-import java.lang.reflect.Array;
-import java.util.*;
-import java.util.List;
+import java.awt.Color;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Model represents the state of the app. Everything that persists for a longer

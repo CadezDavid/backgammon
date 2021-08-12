@@ -131,13 +131,13 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
     @Override
     public int[] dice() {
         Game game = this.model.getGame();
-        int[] dice = new int[game.getDice().size()];
+//        int[] dice = new int[game.getDice().size()];
+//
+//        for (int i = 0; i < game.getDice().size(); i++) {
+//            dice[i] = game.getDice().get(i);
+//        }
 
-        for (int i = 0; i < game.getDice().size(); i++) {
-            dice[i] = game.getDice().get(i);
-        }
-
-        return dice;
+        return (int[]) game.getDice().clone();
     }
 
     @Override
