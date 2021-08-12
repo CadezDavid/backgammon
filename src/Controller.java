@@ -56,7 +56,6 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
 
     public void onStop() {
         this.render(new SettingsView(this));
-
     }
 
     @Override
@@ -131,13 +130,14 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
     @Override
     public int[] dice() {
         Game game = this.model.getGame();
-//        int[] dice = new int[game.getDice().size()];
-//
-//        for (int i = 0; i < game.getDice().size(); i++) {
-//            dice[i] = game.getDice().get(i);
-//        }
+        ArrayList<Integer> dice = game.getDice();
+        int[] clone = new int[dice.size()];
 
-        return (int[]) game.getDice().clone();
+        for (int i = 0; i < dice.size(); i++) {
+            clone[i] = dice.get(i);
+        }
+
+        return clone;
     }
 
     @Override

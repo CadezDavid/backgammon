@@ -3,6 +3,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Set;
 
 /**
@@ -79,7 +80,7 @@ class Game {
     /**
      * Counts the turns in the game.
      */
-    private int round;
+    private LinkedList<int[]> round;
 
     /**
      * Tells the order of the players by direction (i.e. positive negative).
@@ -91,9 +92,9 @@ class Game {
     public Game() {
         // this.points = new int[]{0, -5, -5, -5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         // 0, 0, 0, 0, 0, 3, 4, 5, 0};
-        this.points = new int[]{0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2, 0};
-        this.round = 0;
-        this.turns = new int[]{-1, 1};
+        this.points = new int[] { 0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2, 0 };
+        this.round = new LinkedList<int[]>();
+        this.turns = new int[] { -1, 1 };
         this.dice = new ArrayList<Integer>();
 
         this.roll();
@@ -155,15 +156,16 @@ class Game {
     /**
      * Tells the direction of the player that is currently playing.
      */
-    public int getPlayer() {
-        return this.turns[this.round % 2];
+    public int getTurn() {
+        return this.turns[this.round.size() % 2];
     }
 
     /**
      * Returns the direction of the point.
      */
     private static int getPointDirection(int[] board, int index) {
-        if (board[index] == 0) return 0;
+        if (board[index] == 0)
+            return 0;
         return board[index] / Math.abs(board[index]);
     }
 
@@ -179,7 +181,8 @@ class Game {
      * anything. It only tells whether the move is strictly valid.
      */
     public static boolean isMoveValid(int[] board, int start, int end) {
-        if (start == end) return false;
+        if (start == end)
+            return false;
 
         int diff = end - start;
         int direction = diff / Math.abs(diff);
@@ -247,7 +250,7 @@ class Game {
      * the current state of the game.
      */
     public Set<Integer> getMoves(int start) {
-        int player = this.getPlayer();
+        int player = this.getTurn();
         return getMoves(this.points, player, this.dice, start);
     }
 
@@ -315,7 +318,7 @@ class Game {
         int higher = Collections.max(dice);
         int lower = Collections.min(dice);
 
-        for (int move : new int[]{higher, lower}) {
+        for (int move : new int[] { higher, lower }) {
             int end = start + move * direction;
 
             if (isPossibleMove(points, start, end, new ArrayList<>())) {
@@ -449,13 +452,23 @@ class Game {
     }
 
     /**
-     * Performs a moves on a board and takes out the used die.
+     * Reverses the board to previous round and rolls the dice.
+     */
+    public void reverseMove() {
+        if (!round.isEmpty()) {
+            this.points = this.round.pop();
+            roll();
+        }
+    }
+
+    /**
+     * Performs a move on a board and takes out the used die.
      */
     public void move(int start, int end) {
         int moves = Arrays.stream(this.getMovableCheckers()).sum();
 
         if (moves == 0) {
-            this.round++;
+            this.round.push(this.points.clone());
             this.roll();
             return;
         }
@@ -476,7 +489,7 @@ class Game {
 
         // New turn.
         if (this.dice.size() == 0) {
-            this.round++;
+            this.round.push(this.points.clone());
             this.roll();
         }
     }
