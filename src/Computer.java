@@ -17,14 +17,18 @@ class Computer {
 
     // MARK: - Accessors
 
-    public Set<Move> getMoves(int[] points, int direction, ArrayList<Integer> dice) {
+    public Move getMove(int[] points, int direction, ArrayList<Integer> dice) {
+        return new Move(1, 2);
+    }
+
+    private Set<Move> getMoves(int[] points, int direction, ArrayList<Integer> dice) {
         tree = new Node(null);
 
         Set<Set<Move>> allMoves = allMovesFromDice(points, direction, dice);
         for (Set<Move> moves : allMoves) {
             int[] newPoints = points.clone();
             for (Move move : moves) {
-                Game.move(newPoints, move.getStartPoint(), move.getEndPoint());
+                Game.move(newPoints, move.start, move.end);
             }
             tree.addChild(new Node(moves));
         }
@@ -145,7 +149,7 @@ class Computer {
 
     private static int[] move(int[] points, Set<Move> moves) {
         for (Move move : moves) {
-            points = Game.move(points, move.getStartPoint(), move.getEndPoint());
+            points = Game.move(points, move.start, move.end);
         }
         return points;
     }
@@ -249,20 +253,12 @@ class Computer {
     }
 
     static class Move {
-        private int startPoint;
-        private int endPoint;
+        public final int start;
+        public final int end;
 
-        public Move(int startPoint, int endPoint) {
-            this.startPoint = startPoint;
-            this.endPoint = endPoint;
-        }
-
-        public int getStartPoint() {
-            return startPoint;
-        }
-
-        public int getEndPoint() {
-            return endPoint;
+        public Move(int start, int end) {
+            this.start = start;
+            this.end = end;
         }
 
     }

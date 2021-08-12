@@ -78,9 +78,9 @@ class Game {
     private ArrayList<Integer> dice;
 
     /**
-     * Counts the turns in the game.
+     * Rounds is a linked list of board states.
      */
-    private LinkedList<int[]> round;
+    private final LinkedList<int[]> rounds;
 
     /**
      * Tells the order of the players by direction (i.e. positive negative).
@@ -90,12 +90,10 @@ class Game {
     // MARK: - Constructors
 
     public Game() {
-        // this.points = new int[]{0, -5, -5, -5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        // 0, 0, 0, 0, 0, 3, 4, 5, 0};
-        this.points = new int[] { 0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2, 0 };
-        this.round = new LinkedList<int[]>();
-        this.turns = new int[] { -1, 1 };
-        this.dice = new ArrayList<Integer>();
+        this.points = new int[]{0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2, 0};
+        this.rounds = new LinkedList<>();
+        this.turns = new int[]{-1, 1};
+        this.dice = new ArrayList<>();
 
         this.roll();
     }
@@ -128,9 +126,7 @@ class Game {
         int whites = 0;
         int blacks = 0;
 
-        for (int i = 0; i < points.length; i++) {
-            int checkers = points[i];
-
+        for (int checkers : points) {
             if (checkers < 0)
                 whites -= checkers;
             else
@@ -157,7 +153,7 @@ class Game {
      * Tells the direction of the player that is currently playing.
      */
     public int getTurn() {
-        return this.turns[this.round.size() % 2];
+        return this.turns[this.rounds.size() % 2];
     }
 
     /**
@@ -258,7 +254,7 @@ class Game {
      * Tells where the player may move the checkers from the starting point.
      */
     public static Set<Integer> getMoves(int[] points, int player, ArrayList<Integer> dice, int start) {
-        HashSet<Integer> moves = new HashSet<Integer>();
+        HashSet<Integer> moves = new HashSet<>();
 
         // Check that there's anything to move.
         if (points[start] == 0 || dice.size() == 0)
@@ -318,7 +314,7 @@ class Game {
         int higher = Collections.max(dice);
         int lower = Collections.min(dice);
 
-        for (int move : new int[] { higher, lower }) {
+        for (int move : new int[]{higher, lower}) {
             int end = start + move * direction;
 
             if (isPossibleMove(points, start, end, new ArrayList<>())) {
@@ -400,7 +396,7 @@ class Game {
      * Rolls the dice.
      */
     private void roll() {
-        this.dice = new ArrayList<Integer>();
+        this.dice = new ArrayList<>();
 
         // Roll the dice.
         for (int i = 0; i < 2; i++) {
@@ -452,13 +448,13 @@ class Game {
     }
 
     /**
-     * Reverses the board to previous round and rolls the dice.
+     * Reverses the last move, returns the board to previous round and rolls the dice.
      */
-    public void reverseMove() {
-        if (!round.isEmpty()) {
-            this.points = this.round.pop();
-            roll();
-        }
+    public void undo() {
+        if (this.rounds.isEmpty()) return;
+
+        this.points = this.rounds.pollLast();
+        this.roll();
     }
 
     /**
@@ -468,7 +464,7 @@ class Game {
         int moves = Arrays.stream(this.getMovableCheckers()).sum();
 
         if (moves == 0) {
-            this.round.push(this.points.clone());
+            this.rounds.push(this.points.clone());
             this.roll();
             return;
         }
@@ -489,7 +485,7 @@ class Game {
 
         // New turn.
         if (this.dice.size() == 0) {
-            this.round.push(this.points.clone());
+            this.rounds.push(this.points.clone());
             this.roll();
         }
     }
@@ -525,11 +521,6 @@ class Player {
     public Color point;
 
     // MARK: - Constructor
-
-    public Player() {
-        this.name = "";
-        this.type = Type.HUMAN;
-    }
 
     public Player(String name, Type type, Color checker, Color point) {
         this.name = name;
