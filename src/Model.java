@@ -10,6 +10,13 @@ import java.util.List;
  */
 class Model {
 
+    // MARK: - Constatnts
+
+    private static final Color WHITE_POINT = new Color(245, 223, 213);
+    private static final Color BLACK_POINT = new Color(74, 47, 31);
+    private static final Color WHITE_CHECKER = new Color(255, 232, 222);
+    private static final Color BLACK_CHECKER = new Color(51, 46, 44);
+
     // MARK: - State
 
     private Game game;
@@ -20,8 +27,8 @@ class Model {
     // MARK: - Constructor
 
     public Model() {
-        this.white = new Player("WHITE", Player.Type.HUMAN, Color.WHITE, Color.WHITE);
-        this.black = new Player("BLACK", Player.Type.HUMAN, Color.BLACK, Color.BLACK);
+        this.white = new Player("WHITE", Player.Type.HUMAN, WHITE_CHECKER, WHITE_POINT);
+        this.black = new Player("BLACK", Player.Type.HUMAN, BLACK_CHECKER, BLACK_POINT);
 
         this.game = new Game();
     }

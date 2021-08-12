@@ -2,9 +2,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.util.EventObject;
 
-class PlayerView extends JPanel implements PointView.Delegate, CheckerView.Delegate, ActionListener {
+class PlayerView extends JPanel implements PointView.Delegate, CheckerView.Delegate, KeyListener {
 
     // MARK: - Delegate
 
@@ -74,16 +76,17 @@ class PlayerView extends JPanel implements PointView.Delegate, CheckerView.Deleg
 
     // MARK: - Constructors
 
-    PlayerView(Delegate delegate) {
+    PlayerView(Player player, Delegate delegate) {
         this.delegate = delegate;
 
         // Layout
         this.setLayout(new GridBagLayout());
-
         GridBagConstraints c = new GridBagConstraints();
 
-        this.name = new JTextField();
-        this.name.setText(this.delegate.name(this));
+        this.name = new JTextField(player.name);
+        this.name.setHorizontalAlignment(JTextField.CENTER);
+        this.name.setFont(new Font("Arial", Font.BOLD, 24));
+        this.name.setBorder(null);
         c.gridx = 0;
         c.gridy = 0;
         c.fill = GridBagConstraints.HORIZONTAL;
@@ -99,6 +102,7 @@ class PlayerView extends JPanel implements PointView.Delegate, CheckerView.Deleg
         c.gridwidth = 1;
         c.weightx = 0.5;
         c.weighty = 0.8;
+        c.insets = new Insets(10, 10, 10, 10);
         this.add(this.checker, c);
 
         this.point = new PointView(this);
@@ -108,22 +112,29 @@ class PlayerView extends JPanel implements PointView.Delegate, CheckerView.Deleg
         c.gridwidth = 1;
         c.weightx = 0.5;
         c.weighty = 0.8;
+        c.insets = new Insets(10, 10, 10, 10);
         this.add(this.point, c);
 
 
         // Events
-        this.name.addActionListener(this);
+        this.name.addKeyListener(this);
     }
 
-    // MARK: - Name events
+    // MARK: - Events
 
     @Override
-    public void actionPerformed(ActionEvent e) {
+    public void keyTyped(KeyEvent e) { }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
         if (e.getSource() == this.name) {
-            NameChangedEvent event = new NameChangedEvent(this, this.name.getName());
+            NameChangedEvent event = new NameChangedEvent(this, this.name.getText());
             this.delegate.onNameChanged(event);
         }
     }
+
+    @Override
+    public void keyReleased(KeyEvent e) { }
 
     // MARK: - Checker Events
 

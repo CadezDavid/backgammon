@@ -68,26 +68,27 @@ class SettingsView extends JPanel implements ActionListener, PlayerView.Delegate
         c.fill = GridBagConstraints.BOTH;
         c.gridwidth = 2;
         c.weightx = 1;
-        c.weighty = 0.3;
+        c.weighty = 0.2;
         this.add(this.title, c);
 
-        this.white = new PlayerView(this);
-        this.white.setBorder(BorderFactory.createLineBorder(Color.black));
+        this.white = new PlayerView(this.delegate.white(), this);
         c.gridx = 0;
         c.gridy = 1;
         c.fill = GridBagConstraints.BOTH;
         c.gridwidth = 1;
         c.weightx = 0.5;
-        c.weighty = 0.5;
+        c.weighty = 0.6;
+        c.insets = new Insets(10, 30, 10, 30);
         this.add(this.white, c);
 
-        this.black = new PlayerView(this);
+        this.black = new PlayerView(this.delegate.black(), this);
         c.gridx = 1;
         c.gridy = 1;
         c.fill = GridBagConstraints.BOTH;
         c.gridwidth = 1;
         c.weightx = 0.5;
         c.weighty = 0.5;
+        c.insets = new Insets(10, 30, 10, 30);
         this.add(this.black, c);
 
         this.start = new JButton("Start");
@@ -97,6 +98,7 @@ class SettingsView extends JPanel implements ActionListener, PlayerView.Delegate
         c.gridwidth = 2;
         c.weightx = 1;
         c.weighty = 0.2;
+        c.insets = new Insets(30, 30, 30, 30);
         this.add(this.start, c);
 
         // Events

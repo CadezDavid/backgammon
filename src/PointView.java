@@ -64,7 +64,12 @@ class PointView extends JPanel implements MouseListener {
         int width = this.getWidth();
         int height = this.getHeight();
 
-        g.fillPolygon(new int[]{0, width / 2, width}, new int[]{0, height, 0}, 3);
+        int[] xs = new int[]{0, width / 2, width};
+        int[] ys = new int[]{0, height, 0};
+
+        g.fillPolygon(xs, ys, 3);
+        g.setColor(new Color(167, 100, 84));
+        g.drawPolygon(xs, ys, 3);
     }
 
     // MARK: - Accessors

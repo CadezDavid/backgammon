@@ -1,12 +1,8 @@
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Point;
+import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.geom.Rectangle2D;
 import java.util.EventObject;
 import java.util.HashSet;
 import java.util.Set;
@@ -37,18 +33,20 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
     private static final Color BOARD_COLOR = new Color(117, 60, 24);
     private static final Color BOARD_BACKGROUND = new Color(245, 126, 51);
     private static final Color BOARD_EDGES = new Color(167, 100, 84);
-    private static final Color WHITE_POINT = new Color(245, 223, 213);
-    private static final Color BLACK_POINT = new Color(74, 47, 31);
-    private static final Color WHITE_CHECKER = new Color(255, 232, 222);
-    private static final Color BLACK_CHECKER = new Color(51, 46, 44);
-    private static final Color CHECKER_EDGE = new Color(128, 116, 111);
-    private static final Color ACTIVE_CHECKER_EDGE  = new Color(255, 100, 100);
 
+
+    private static final Color CHECKER_EDGE = new Color(128, 116, 111);
+    private static final Color ACTIVE_CHECKER_EDGE = new Color(100, 255, 100);
     private static final Color CHECKER_BACKGROUND = new Color(233, 241, 223);
+
     private static final Color DROP_COLOR = new Color(75, 75, 75);
     private static final Color TARGET_COLOR = new Color(0, 0, 0);
+
     private static final Color DIE_COLOR = new Color(240, 240, 240);
     private static final Color DOTS_COLOR = new Color(0, 0, 0);
+
+    private static final Color RESULT_BACKGROUND = new Color(246, 236, 236);
+    private static final Color VICTORY_COLOR = new Color(250, 230, 50);
 
     // MARK: - Delegate
 
@@ -79,6 +77,21 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
          * Current dice.
          */
         int[] dice();
+
+        /**
+         * Returns the white player.
+         */
+        Player white();
+
+        /**
+         * Returns the black player.
+         */
+        Player black();
+
+        /**
+         * Current game state.
+         */
+        Game.State state();
     }
 
     /**
@@ -169,11 +182,11 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
         } else {
             // White is trying to get to 0 and black to 26.
             if (this.target == 0) {
-                this.setBackground(WHITE_POINT);
+                this.setBackground(this.delegate.white().point);
             }
 
             if (this.target == 25) {
-                this.setBackground(BLACK_POINT);
+                this.setBackground(this.delegate.black().point);
             }
         }
 
@@ -264,6 +277,61 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
             paintDie(g, diceSize, new Point(x, y), dice[i]);
         }
 
+        // ----------------------------------------------
+        // Paint the winning screen.
+
+        this.paintResult(g);
+    }
+
+    /**
+     * Paints the result of the game.
+     */
+    private void paintResult(Graphics g) {
+        Graphics2D g2d = (Graphics2D) g;
+
+        int width = this.getWidth();
+        int height = this.getHeight();
+
+        Game.State state = this.delegate.state();
+
+        // Don't draw anything while in progress.
+        if (state == Game.State.IN_PROGRESS) return;
+
+        Dimension size = new Dimension(width / 3, height / 5);
+
+        // Draw the background.
+        g2d.setColor(RESULT_BACKGROUND);
+        g2d.fillRoundRect((width - size.width) / 2, (height - size.height) / 2, size.width, size.height, 16, 16);
+        g2d.setColor(VICTORY_COLOR);
+        g2d.setStroke(new BasicStroke(2));
+        g2d.drawRoundRect((width - size.width) / 2, (height - size.height) / 2, size.width, size.height, 16, 16);
+
+        // Draw the text.
+        String message = "";
+        Color color = VICTORY_COLOR;
+
+        if (state == Game.State.WIN_BLACK) {
+            Player player = this.delegate.black();
+            message = "Winner is " + player.name + "!";
+            color = player.checker;
+        }
+
+        if (state == Game.State.WIN_WHITE) {
+            Player player = this.delegate.white();
+            message = player.name + " has won!";
+            color = player.checker;
+        }
+
+        g.setColor(color);
+        g.setFont(new Font("Arial", Font.BOLD, size.height / 5));
+        FontMetrics metrics = g.getFontMetrics();
+
+        Rectangle2D bounds = metrics.getStringBounds(message, g);
+
+        int x = (width - (int) bounds.getWidth()) / 2;
+        int y = height / 2;
+
+        g.drawString(message, x, y);
     }
 
     /**
@@ -336,10 +404,10 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 
         if (odd) {
             y3 = base.y + this.getPointOrientation(index) * this.getPointHeight();
-            g.setColor(BLACK_POINT);
+            g.setColor(this.delegate.black().point);
         } else {
             y3 = base.y + this.getPointOrientation(index) * (4 * this.getPointHeight() / 5);
-            g.setColor(WHITE_POINT);
+            g.setColor(this.delegate.white().point);
         }
 
         // Each point has an internal color and a light shading over the border.
@@ -493,9 +561,9 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
      * Returns the color of a checker on a given point.
      */
     private Color getCheckerColor(int checkers) {
-        Color color = WHITE_CHECKER;
+        Color color = this.delegate.white().checker;
         if (checkers > 0)
-            color = BLACK_CHECKER;
+            color = this.delegate.black().checker;
 
         return color;
     }
@@ -607,16 +675,12 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
      * Draws a die with a given value at desired destination.
      */
     public static void paintDie(Graphics g, int size, Point center, int value) {
-        int r = size / 2 ;
+        int r = size / 2;
         int spacing = size / 4;
-
-        int x = center.x - r;
-        int y = center.y - r;
 
         // Draw the dice.
         g.setColor(DIE_COLOR);
-        g.fillRect(center.x, y, r, r);
-        g.fillRect(x, y, size, size);
+        g.fillRoundRect(center.x - r, center.y - r, size, size, 8, 8);
 
         // Figure out the points on dice.
         Point[] points = new Point[value];

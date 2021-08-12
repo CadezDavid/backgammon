@@ -1,7 +1,9 @@
 import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.*;
 
-public class Controller extends JFrame implements BoardView.Delegate, SettingsView.Delegate {
+public class Controller extends JFrame implements ActionListener, BoardView.Delegate, SettingsView.Delegate {
 
     // MARK: - State
 
@@ -13,6 +15,8 @@ public class Controller extends JFrame implements BoardView.Delegate, SettingsVi
      */
     private JPanel view;
 
+    private JMenuItem menuItemStartGame;
+
     // MARK: - Constructor
 
     public Controller() {
@@ -20,10 +24,24 @@ public class Controller extends JFrame implements BoardView.Delegate, SettingsVi
 
         this.setDefaultCloseOperation(EXIT_ON_CLOSE);
 
+        // State
         this.model = new Model();
         this.view = new SettingsView(this);
 
+        // View
         this.add(this.view);
+
+        // MenuBar
+        JMenuBar menu_bar = new JMenuBar();
+        this.setJMenuBar(menu_bar);
+
+        JMenu igra_menu = new JMenu("Nova igra");
+        menu_bar.add(igra_menu);
+
+        this.menuItemStartGame = new JMenuItem("Začni novo igro.");
+        igra_menu.add(this.menuItemStartGame);
+
+        this.menuItemStartGame.addActionListener(this);
     }
 
     // MARK: - Methods
@@ -93,6 +111,11 @@ public class Controller extends JFrame implements BoardView.Delegate, SettingsVi
         return points;
     }
 
+    public Game.State state() {
+        Game game = this.model.getGame();
+        return game.getState();
+    }
+
     @Override
     public void onDragged(BoardView.DraggedEvent event) {
         Game game = this.model.getGame();
@@ -118,6 +141,13 @@ public class Controller extends JFrame implements BoardView.Delegate, SettingsVi
     public int[] board() {
         Game game = this.model.getGame();
         return game.getPoints();
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == this.menuItemStartGame) {
+            this.onStop();
+        }
     }
 }
 
