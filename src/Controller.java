@@ -14,15 +14,27 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
 
     // MARK: - State
 
-    private final Model model;
     /**
-     * View may be anything that conforms to a JPanel. Ideally, controller doesn't
-     * know much about the view itself besides the re-rendering options and size.
+     * Model holds all data we use in the app.
      */
-    private JPanel view;
+    private final Model model;
 
+    /**
+     * Class we use to compute moves with.
+     */
+    private final Computer computer;
+
+    /**
+     * Different views of the app.
+     */
+    private final SettingsView settings;
+    private final BoardView board;
+
+    /**
+     * Items in the menu bar. We use this for source distinction in events.
+     */
     private final JMenuItem menuItemStartGame;
-    private final JMenuItem menuItemRevert;
+    private final JMenuItem menuItemUndo;
 
     // MARK: - Constructor
 
@@ -33,30 +45,28 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
 
         // State
         this.model = new Model();
-        this.view = new SettingsView(this);
-
-        // View
-        this.add(this.view);
+        this.settings = new SettingsView(this);
+        this.board = new BoardView(this);
+        this.computer = new Computer();
 
         // MenuBar
         JMenuBar menu_bar = new JMenuBar();
         this.setJMenuBar(menu_bar);
 
-        JMenu igra_menu = new JMenu("Nova igra");
+        JMenu igra_menu = new JMenu("Igra");
         menu_bar.add(igra_menu);
 
         this.menuItemStartGame = new JMenuItem("Začni novo igro.");
         igra_menu.add(this.menuItemStartGame);
 
+        this.menuItemUndo = new JMenuItem("Razveljavi zadnjo potezo.");
+        igra_menu.add(this.menuItemUndo);
+
         this.menuItemStartGame.addActionListener(this);
+        this.menuItemUndo.addActionListener(this);
 
-        JMenu revert = new JMenu("Razveljavi potezo");
-        menu_bar.add(revert);
-
-        this.menuItemRevert = new JMenuItem("Razveljavi potezo.");
-        revert.add(this.menuItemRevert);
-
-        this.menuItemRevert.addActionListener(this);
+        // Render the settings view.
+        this.onStop();
     }
 
     // MARK: - Methods
@@ -66,11 +76,13 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
      */
     public void onStart() {
         this.model.startGame();
-        this.render(new BoardView(this));
+        this.render(this.board);
+
+        this.tick();
     }
 
     public void onStop() {
-        this.render(new SettingsView(this));
+        this.render(this.settings);
     }
 
     @Override
@@ -94,15 +106,33 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
     }
 
     /**
+     * Checks if it has to perform a move.
+     */
+    private void tick() {
+        Game game = this.model.getGame();
+
+        int turn = game.getTurn();
+        boolean wcpu = turn == -1 && this.white().type == Player.Type.COMPUTER;
+        boolean bcpu = turn == 1 && this.black().type == Player.Type.COMPUTER;
+
+        if (wcpu || bcpu) {
+            Computer.Move move = this.computer.getMove(game.getPoints(), turn, game.getDice());
+
+            this.board.animate(move.start, move.end);
+            game.move(move.start, move.end);
+
+            this.board.repaint();
+        }
+    }
+
+    /**
      * Recreates the window to present the current view.
      */
     private void render(JPanel view) {
-        this.getContentPane().remove(this.view);
+        this.getContentPane().removeAll();
 
-        this.view = view;
-
-        this.getContentPane().add(this.view);
-        this.setSize(this.view.getPreferredSize());
+        this.getContentPane().add(view);
+        this.setSize(view.getPreferredSize());
 
         this.revalidate();
         this.repaint();
@@ -137,8 +167,9 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
     public void onDragged(BoardView.DraggedEvent event) {
         Game game = this.model.getGame();
 
-        if (event.getSource() == this.view) {
+        if (event.getSource() == this.board) {
             game.move(event.start, event.end);
+            this.repaint();
         }
     }
 
@@ -169,5 +200,12 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
             model.getGame().reverseMove();
             this.repaint();
         }
+
+        if (e.getSource() == this.menuItemUndo) {
+            Game game = this.model.getGame();
+            game.undo();
+        }
+
+        this.board.repaint();
     }
 }

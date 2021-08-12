@@ -1,19 +1,17 @@
 import java.awt.*;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
+import java.awt.event.*;
 import java.awt.geom.Rectangle2D;
 import java.util.EventObject;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.swing.JPanel;
+import javax.swing.*;
 
 /**
  * This file contains everything related to drawing the board.
  */
 
-class BoardView extends JPanel implements MouseListener, MouseMotionListener {
+class BoardView extends JPanel implements ActionListener, MouseListener, MouseMotionListener {
     // Offset from the edge of the screen.
     private static final int PADDING = 75;
 
@@ -27,6 +25,11 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
     private static final int CHECKER_OFFSET = 5;
     // Number of checkers that each player has.
     private static final int CHECKERS = 15;
+
+    // Duration of an animation in milliseconds.
+    private static final int ANIMATION_DURATION = 100;
+    // Number of frames in an animation.
+    private static final int FRAMES = 50;
 
     // Board color settings.
     private static final Color BOARD_COLOR = new Color(117, 60, 24);
@@ -45,6 +48,7 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 
     private static final Color RESULT_BACKGROUND = new Color(246, 236, 236);
     private static final Color VICTORY_COLOR = new Color(250, 230, 50);
+
 
     // MARK: - Delegate
 
@@ -94,7 +98,7 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
     /**
      * Event triggered when drag happens.
      */
-    public class DraggedEvent extends EventObject {
+    public static class DraggedEvent extends EventObject {
         public final int start;
         public final int end;
 
@@ -114,6 +118,23 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
     private final Delegate delegate;
 
     // MARK: - State
+
+    /**
+     * The checker that is currently animated.
+     */
+    private AnimatedChecker animated;
+
+    private static class AnimatedChecker {
+        /**
+         * The point we took the checker from.
+         */
+        public int start;
+        public int end;
+
+        public int frame;
+    }
+
+    private final Timer animation;
 
     /**
      * The checker that is being dragged.
@@ -144,9 +165,14 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
 
         this.mouse = this.getMousePosition();
         this.drops = new HashSet<Integer>();
+
         this.direction = 0;
         this.dragged = null;
         this.target = null;
+
+        this.animation = new Timer(ANIMATION_DURATION / FRAMES, this);
+        this.animation.setRepeats(true);
+        this.animated = null;
 
         this.addMouseListener(this);
         this.addMouseMotionListener(this);
@@ -165,6 +191,26 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
         int height = boardHeight + 2 * PADDING;
 
         return new Dimension(width, height);
+    }
+
+    // MARK: - Method
+
+    /**
+     * Animates a checker transition without modifying the state.
+     */
+    public void animate(int start, int end) {
+        // No animation when no move.
+        if (start == end) return;
+
+
+        // Creates a new animation.
+        AnimatedChecker checker = new AnimatedChecker();
+        checker.start = start;
+        checker.end = end;
+        checker.frame = 0;
+
+        this.animated = checker;
+        this.animation.start();
     }
 
     // MARK: - View
@@ -211,6 +257,13 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
             // Get the number of checkers and account for the dragging.
             if (this.dragged != null && this.dragged == i)
                 checkers -= this.direction;
+
+            // Account for the animation.
+            if (this.animated != null && this.animated.start == i) {
+                int diff = this.animated.end - this.animated.start;
+                int direction = diff / Math.abs(diff);
+                checkers -= direction;
+            }
 
             for (int j = 0; j < Math.abs(checkers); j++) {
                 Point cord = this.getCheckerPosition(i, j);
@@ -275,10 +328,56 @@ class BoardView extends JPanel implements MouseListener, MouseMotionListener {
         }
 
         // ----------------------------------------------
+        // Paint the animated checker.
+
+        if (this.animated != null) {
+            // Calculate move properties.
+            int[] board = this.delegate.board();
+
+            int astart = this.animated.start;
+            int aend = this.animated.end;
+
+            // Calculate move properties.
+            Point origin = this.getCheckerPosition(astart, Math.abs(board[astart] - 1));
+            Point target = this.getCheckerPosition(aend, Math.abs(board[aend]));
+
+            int x = origin.x + (target.x - origin.x) * this.animated.frame / FRAMES;
+            int y = origin.y + (target.y - origin.y) * this.animated.frame / FRAMES;
+
+            int diff = aend - astart;
+            int direction = diff / Math.abs(diff);
+
+            Color color = this.getCheckerColor(direction);
+            paintChecker(g, x, y, checkerSize / 2, color);
+        }
+
+        // ----------------------------------------------
         // Paint the winning screen.
 
         this.paintResult(g);
     }
+
+    // MARK: - Animation
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        // Check that we are animating.
+        if (this.animated == null) return;
+
+        this.animated.frame++;
+
+        System.out.println(this.animated.frame);
+
+        // Stop the animation if needed.
+        if (this.animated.frame == FRAMES) {
+            this.animated = null;
+            this.animation.stop();
+        }
+
+        this.repaint();
+    }
+
+    // MARK: - Components
 
     /**
      * Paints the result of the game.
