@@ -18,7 +18,7 @@ class Computer {
     // MARK: - Accessors
 
     public Set<Move> getMoves(int[] points, int direction, ArrayList<Integer> dice) {
-        tree = new Node(points, null, 0);
+        tree = new Node(null);
 
         Set<Set<Move>> allMoves = allMovesFromDice(points, direction, dice);
         for (Set<Move> moves : allMoves) {
@@ -26,12 +26,12 @@ class Computer {
             for (Move move : moves) {
                 Game.move(newPoints, move.getStartPoint(), move.getEndPoint());
             }
-            tree.addChild(new Node(newPoints, moves, 1));
+            tree.addChild(new Node(moves));
         }
 
         int k = 10000;
         while (k > 0) {
-            tree.search();
+            tree.search(points, direction);
             k--;
         }
 
@@ -98,9 +98,9 @@ class Computer {
 
                 int[] rpoints = Game.move(points, start, end);
 
-                dice.remove(new Integer(Math.abs(end - start)));
+                dice.remove((Integer) Math.abs(end - start));
                 Set<Set<Move>> rAllMoves = allMovesFromDice(rpoints, direction, dice);
-                dice.add(new Integer(Math.abs(end - start)));
+                dice.add((Integer) Math.abs(end - start));
 
                 for (Set<Move> set : rAllMoves) {
                     set.add(new Move(start, end));
@@ -111,20 +111,26 @@ class Computer {
         return allMoves;
     }
 
+    private static boolean result(int[] points, int direction) {
+        for (int i = 0; i < 26; i++) {
+            if (points[i] * direction > 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static int[] move(int[] points, Set<Move> moves) {
+        for (Move move : moves) {
+            points = Game.move(points, move.getStartPoint(), move.getEndPoint());
+        }
+        return points;
+    }
+
     /**
      * Tree structure which intelligence uses for MCTS.
      */
     static class Node {
-
-        /**
-         * Marks which player is on the move in this node.
-         */
-        private int direction;
-
-        /**
-         * The game state this node represents.
-         */
-        private int[] points;
 
         /**
          * Respresents moves that were made from parent node to this node.
@@ -146,15 +152,11 @@ class Computer {
          */
         private Set<Node> children;
 
-        private int depth;
-
         public static int c = 1;
 
-        public Node(int[] points, Set<Move> moves, int depth) {
-            this.points = points;
+        public Node(Set<Move> moves) {
             this.moves = moves;
             this.children = new HashSet<Node>();
-            this.depth = depth;
         }
 
         public void addChild(Node child) {
@@ -183,17 +185,15 @@ class Computer {
             return best;
         }
 
-        public boolean search() {
-            if (this.depth > 500) {
+        public boolean search(int[] points, int direction) {
+            if (result(points, 1)) {
                 return false;
             }
             Node child;
             Set<Move> moves = makeRandomMoves(points, direction);
-            for (Move move : moves) {
-                points = Game.move(points, move.getStartPoint(), move.getEndPoint());
-            }
-            child = new Node(points, moves, this.depth + 1);
-            boolean yield = child.search();
+            points = move(points, moves);
+            child = new Node(moves);
+            boolean yield = child.search(points, direction * -1);
             if (yield) {
                 wins++;
             }
@@ -201,17 +201,17 @@ class Computer {
             return yield;
         }
 
-        public boolean preSearch() {
+        public boolean preSearch(int[] points, int direction) {
             if (children.isEmpty()) {
-                expand();
-                return search();
+                expand(points, direction);
+                return search(points, -1 * direction);
             } else {
                 Node child = bestChild();
-                return child.preSearch();
+                return child.preSearch(move(points, child.getMoves()),-1 * direction);
             }
         }
 
-        private void expand() {
+        private void expand(int[] points, int direction) {
             int bar = 25 * (1 - direction) / 2;
             int opponentsBar = 25 * (1 + direction) / 2;
             Set<Node> children = new HashSet<Node>();
@@ -223,11 +223,10 @@ class Computer {
                         for (int start2 = bar; start2 * direction < opponentsBar; start2 += direction) {
                             for (int end2 = start2; end2 * direction < opponentsBar + 5; end2 += direction) {
                                 if (Game.isMoveValid(newPoints, start2, end2)) {
-                                    int[] p = Game.move(newPoints.clone(), start2, end2);
                                     Set<Move> moves = new HashSet<Move>();
                                     moves.add(new Move(start1, end1));
                                     moves.add(new Move(start2, end2));
-                                    children.add(new Node(p, moves, this.depth + 1));
+                                    children.add(new Node(moves));
                                 }
                             }
                         }
@@ -236,10 +235,6 @@ class Computer {
                 }
             }
             this.children = children;
-        }
-
-        public int[] getPoints() {
-            return points;
         }
 
         public int getAll() {
