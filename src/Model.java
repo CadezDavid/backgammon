@@ -382,7 +382,7 @@ class Game {
                     continue;
 
                 // Copy the dice and remove the current dice.
-                ArrayList<Integer> rdice = (ArrayList) dice.clone();
+                ArrayList<Integer> rdice = (ArrayList<Integer>) dice.clone();
                 rdice.remove(j);
 
                 // Check if we can meaningfully make other moves.
@@ -462,7 +462,8 @@ class Game {
     }
 
     /**
-     * Performs a move on a board and takes out the used die.
+     * Performs a move on a board, takes out the used die and pushes previous
+     * points to round.
      */
     public void move(int start, int end) {
         int moves = Arrays.stream(this.getMovableCheckers()).sum();
@@ -475,8 +476,6 @@ class Game {
 
         if (start == end)
             return;
-
-        this.points = move(this.points, start, end);
 
         // Update the dice.
         Integer die = Math.abs(end - start);
@@ -492,6 +491,8 @@ class Game {
             this.round.push(this.points.clone());
             this.roll();
         }
+
+        this.points = move(this.points, start, end);
     }
 }
 

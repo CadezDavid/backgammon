@@ -1,7 +1,14 @@
-import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JPanel;
 
 class Controller extends JFrame implements ActionListener, BoardView.Delegate, SettingsView.Delegate {
 
@@ -9,13 +16,13 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
 
     private final Model model;
     /**
-     * View may be anything that conforms to a JPanel. Ideally,
-     * controller doesn't know much about the view itself besides the
-     * re-rendering options and size.
+     * View may be anything that conforms to a JPanel. Ideally, controller doesn't
+     * know much about the view itself besides the re-rendering options and size.
      */
     private JPanel view;
 
     private final JMenuItem menuItemStartGame;
+    private final JMenuItem menuItemRevert;
 
     // MARK: - Constructor
 
@@ -42,6 +49,14 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
         igra_menu.add(this.menuItemStartGame);
 
         this.menuItemStartGame.addActionListener(this);
+
+        JMenu revert = new JMenu("Razveljavi potezo");
+        menu_bar.add(revert);
+
+        this.menuItemRevert = new JMenuItem("Razveljavi potezo.");
+        revert.add(this.menuItemRevert);
+
+        this.menuItemRevert.addActionListener(this);
     }
 
     // MARK: - Methods
@@ -78,7 +93,6 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
         this.model.black = black;
     }
 
-
     /**
      * Recreates the window to present the current view.
      */
@@ -107,7 +121,8 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
 
         int[] checkers = game.getMovableCheckers();
         for (int i = 0; i < checkers.length; i++) {
-            if (checkers[i] > 0) points.add(i);
+            if (checkers[i] > 0)
+                points.add(i);
         }
 
         return points;
@@ -150,6 +165,9 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == this.menuItemStartGame) {
             this.onStop();
+        } else if (e.getSource() == this.menuItemRevert) {
+            model.getGame().reverseMove();
+            this.repaint();
         }
     }
 }
