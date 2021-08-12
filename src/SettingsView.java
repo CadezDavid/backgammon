@@ -12,6 +12,7 @@ class SettingsView extends JPanel implements ActionListener, PlayerView.Delegate
     // Offset from the edge of the screen.
     private static final int PADDING = 75;
 
+
     // MARK: - Delegate
 
     public interface Delegate {
@@ -127,67 +128,21 @@ class SettingsView extends JPanel implements ActionListener, PlayerView.Delegate
         if (e.getSource() == this.start) this.delegate.onStart();
     }
 
+
     @Override
-    public String name(PlayerView source) {
-        if (source == this.white) return this.delegate.white().name;
-        if (source == this.black) return this.delegate.black().name;
+    public Player player(PlayerView source) {
+        if (source == this.white) return this.delegate.white();
+        if (source == this.black) return this.delegate.black();
         return null;
     }
 
     @Override
-    public Color checker(PlayerView source) {
-        if (source == this.white) return this.delegate.white().checker;
-        if (source == this.black) return this.delegate.black().checker;
-        return null;
-    }
-
-    @Override
-    public Color point(PlayerView source) {
-        if (source == this.white) return this.delegate.white().point;
-        if (source == this.black) return this.delegate.black().point;
-        return null;
-    }
-
-    @Override
-    public void onNameChanged(PlayerView.NameChangedEvent event) {
+    public void onPlayerChange(PlayerView.PlayerChangedEvent event) {
         if (event.getSource() == this.white) {
-            Player white = this.delegate.white();
-            white.name = event.name;
-            this.delegate.onWhiteChanged(white);
+            this.delegate.onWhiteChanged(event.player);
         }
         if (event.getSource() == this.black) {
-            Player black = this.delegate.black();
-            black.name = event.name;
-            this.delegate.onBlackChanged(black);
+            this.delegate.onBlackChanged(event.player);
         }
     }
-
-    @Override
-    public void onCheckerChanged(PlayerView.ColorChangedEvent event) {
-        if (event.getSource() == this.white) {
-            Player white = this.delegate.white();
-            white.checker = event.color;
-            this.delegate.onWhiteChanged(white);
-        }
-        if (event.getSource() == this.black) {
-            Player black = this.delegate.black();
-            black.checker = event.color;
-            this.delegate.onBlackChanged(black);
-        }
-    }
-
-    @Override
-    public void onPointChanged(PlayerView.ColorChangedEvent event) {
-        if (event.getSource() == this.white) {
-            Player white = this.delegate.white();
-            white.point = event.color;
-            this.delegate.onWhiteChanged(white);
-        }
-        if (event.getSource() == this.black) {
-            Player black = this.delegate.black();
-            black.point = event.color;
-            this.delegate.onBlackChanged(black);
-        }
-    }
-
 }
