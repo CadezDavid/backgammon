@@ -1,16 +1,13 @@
-
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.Set;
 
-
 class Computer {
 
     private static Random r;
-    private static Node tree;
+    private Node tree;
 
     // MARK: - Constructor
 
@@ -21,16 +18,23 @@ class Computer {
     // MARK: - Accessors
 
     public Set<Move> getMoves(int[] points, int direction, ArrayList<Integer> dice) {
-        Set<Set<Move>> allMoves = allMovesFromDice(points, direction, dice);
         tree = new Node(points, null, 0);
+
+        Set<Set<Move>> allMoves = allMovesFromDice(points, direction, dice);
         for (Set<Move> moves : allMoves) {
-            tree.addChild(new Node(move(points, moves), moves, 1));
+            int[] newPoints = points.clone();
+            for (Move move : moves) {
+                Game.move(newPoints, move.getStartPoint(), move.getEndPoint());
+            }
+            tree.addChild(new Node(newPoints, moves, 1));
         }
+
         int k = 10000;
         while (k > 0) {
             tree.search();
             k--;
         }
+
         return tree.bestChild().getMoves();
     }
 
@@ -77,7 +81,6 @@ class Computer {
             }
             i--;
         }
-        // return points;
         return moves;
     }
 
@@ -93,9 +96,7 @@ class Computer {
         for (int start = bar; start * direction < opponentsBar; start += direction) {
             for (Integer end : Game.getMoves(points, direction, dice, start)) {
 
-                Set<Move> rmoves = new HashSet<Move>();
-                rmoves.add(new Move(start, end));
-                int[] rpoints = move(points, rmoves);
+                int[] rpoints = Game.move(points, start, end);
 
                 dice.remove(new Integer(Math.abs(end - start)));
                 Set<Set<Move>> rAllMoves = allMovesFromDice(rpoints, direction, dice);
@@ -108,25 +109,6 @@ class Computer {
             }
         }
         return allMoves;
-    }
-
-    public static int[] move(int[] points, Set<Move> moves) {
-        for (Move move : moves) {
-            int start = move.getStartPoint();
-            int end = move.getEndPoint();
-            int direction = (start < end ? 1 : -1);
-            int opponentsBar = 25 * (1 + direction) / 2;
-
-            if (points[end] * direction == -1) {
-                points[end] = direction;
-                points[start] -= direction;
-                points[opponentsBar] -= direction;
-            } else {
-                points[end] += direction;
-                points[start] -= direction;
-            }
-        }
-        return points;
     }
 
     /**
@@ -207,7 +189,10 @@ class Computer {
             }
             Node child;
             Set<Move> moves = makeRandomMoves(points, direction);
-            child = new Node(move(points, moves), moves, this.depth + 1);
+            for (Move move : moves) {
+                points = Game.move(points, move.getStartPoint(), move.getEndPoint());
+            }
+            child = new Node(points, moves, this.depth + 1);
             boolean yield = child.search();
             if (yield) {
                 wins++;
@@ -274,7 +259,6 @@ class Computer {
         }
 
     }
-
 
     static class Move {
         private int startPoint;
