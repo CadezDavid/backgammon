@@ -7,7 +7,7 @@ import java.util.Random;
 import java.util.Set;
 
 
-public class Computer {
+class Computer {
 
     private static Random r;
     private static Node tree;

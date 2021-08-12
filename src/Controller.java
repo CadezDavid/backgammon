@@ -3,7 +3,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.*;
 
-public class Controller extends JFrame implements ActionListener, BoardView.Delegate, SettingsView.Delegate {
+class Controller extends JFrame implements ActionListener, BoardView.Delegate, SettingsView.Delegate {
 
     // MARK: - State
 
@@ -50,7 +50,13 @@ public class Controller extends JFrame implements ActionListener, BoardView.Dele
      * Starts a new game.
      */
     public void onStart() {
+        this.model.startGame();
         this.render(new BoardView(this));
+    }
+
+    public void onStop() {
+        this.render(new SettingsView(this));
+
     }
 
     @Override
@@ -73,10 +79,7 @@ public class Controller extends JFrame implements ActionListener, BoardView.Dele
         this.model.black = black;
     }
 
-    public void onStop() {
-        this.render(new SettingsView(this));
-    }
-
+    
     /**
      * Recreates the window to present the current view.
      */
@@ -191,9 +194,9 @@ class Intelligence {
         int a = r.nextInt(6) + 1;
         int b = r.nextInt(6) + 1;
         if (a == b) {
-            return new int[] { a, a, a, a };
+            return new int[]{a, a, a, a};
         }
-        return new int[] { a, b };
+        return new int[]{a, b};
     }
 
     /**

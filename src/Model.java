@@ -36,9 +36,14 @@ class Model {
     // MARK: - Methods
 
     /**
+     * Starts a new game.
+     */
+    public void startGame() {
+        this.game = new Game();
+    }
+
+    /**
      * Returns the currently played game.
-     *
-     * @return
      */
     public Game getGame() {
         return this.game;
