@@ -1,6 +1,7 @@
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
@@ -17,15 +18,11 @@ class Computer {
 
     // MARK: - Accessors
 
-    public Move getMove(int[] points, int direction, ArrayList<Integer> dice) {
-        return new Move(1, 2);
-    }
-
-    private Set<Move> getMoves(int[] points, int direction, ArrayList<Integer> dice) {
+    public List<Move> getMoves(int[] points, int direction, ArrayList<Integer> dice) {
         tree = new Node(null);
 
-        Set<Set<Move>> allMoves = allMovesFromDice(points, direction, dice);
-        for (Set<Move> moves : allMoves) {
+        List<List<Move>> allMoves = allMovesFromDice(points, direction, dice);
+        for (List<Move> moves : allMoves) {
             int[] newPoints = points.clone();
             for (Move move : moves) {
                 Game.move(newPoints, move.start, move.end);
@@ -33,9 +30,10 @@ class Computer {
             tree.addChild(new Node(moves));
         }
 
-        int k = 10000;
+        int k = 50;
         while (k > 0) {
-            tree.search(points, direction);
+            tree.preSearch(points, direction);
+            System.out.println(k);
             k--;
         }
 
@@ -45,8 +43,8 @@ class Computer {
     /**
      * Method that simulates a random play, but simplifies game logic for speed.
      */
-    private static Set<Move> makeRandomMoves(int[] points, int direction) {
-        Set<Move> moves = new HashSet<Move>();
+    private static List<Move> makeRandomMoves(int[] points, int direction) {
+        List<Move> moves = new ArrayList<Move>();
         int i = 40;
         int bar = 25 * (1 - direction) / 2;
         while (points[bar] != 0 && 0 < i) {
@@ -88,11 +86,11 @@ class Computer {
         return moves;
     }
 
-    private static Set<Set<Move>> allMovesFromDice(int[] points, int direction, ArrayList<Integer> dice) {
+    private static List<List<Move>> allMovesFromDice(int[] points, int direction, ArrayList<Integer> dice) {
         int bar = 25 * (1 - direction) / 2;
         int opponentsBar = 25 * (1 + direction) / 2;
-        Set<Set<Move>> allMoves = new HashSet<Set<Move>>();
-        allMoves.add(new HashSet<Move>());
+        List<List<Move>> allMoves = new ArrayList<List<Move>>();
+        allMoves.add(new ArrayList<Move>());
         if (dice.isEmpty()) {
             return allMoves;
         }
@@ -103,10 +101,10 @@ class Computer {
                 int[] rpoints = Game.move(points, start, end);
 
                 dice.remove((Integer) Math.abs(end - start));
-                Set<Set<Move>> rAllMoves = allMovesFromDice(rpoints, direction, dice);
+                List<List<Move>> rAllMoves = allMovesFromDice(rpoints, direction, dice);
                 dice.add((Integer) Math.abs(end - start));
 
-                for (Set<Move> set : rAllMoves) {
+                for (List<Move> set : rAllMoves) {
                     set.add(new Move(start, end));
                     allMoves.add(set);
                 }
@@ -115,26 +113,36 @@ class Computer {
         return allMoves;
     }
 
-    public static Set<Node> expand(int[] points, int direction) {
-        Set<Set<Move>> allMoves = new HashSet<Set<Move>>();
+    /**
+     * Returns children that come from current node. expand doesnt check all
+     * possible Nodes it could come to in two moves, but rather a tenth of
+     * them, otherwise the tree would grow too quickly.
+     */
+    private static Set<Node> expand(int[] points, int direction) {
+        int bar = 25 * (1 - direction) / 2;
+        int opponentsBar = 25 * (1 + direction) / 2;
+        Set<Node> children = new HashSet<Node>();
 
-        for (int a = 1; a < 7; a++) {
-            for (int b = a; b < 7; b++) {
-                ArrayList<Integer> dice = new ArrayList<Integer>();
-                dice.add(a);
-                dice.add(b);
-                if (a == b) {
-                    dice.add(a);
-                    dice.add(a);
+        for (int start1 = bar; start1 * direction < opponentsBar; start1 += direction) {
+            for (int throw1 = 1; throw1 < 7; throw1 += direction) {
+                int end1 = start1 + direction * throw1;
+                if (Game.isMoveValid(points, start1, end1)) {
+                    int[] points1 = Game.move(points.clone(), start1, end1);
+                    for (int start2 = bar; start2 * direction < opponentsBar; start2 += direction) {
+                        for (int throw2 = 1; throw2 < 7; throw2 += direction) {
+                            int end2 = start2 + direction * throw2;
+                            if (Game.isMoveValid(points1, start2, end2) && r.nextInt(10) > 8) {
+                                List<Move> moves = new ArrayList<Move>();
+                                moves.add(new Move(start1, end1));
+                                moves.add(new Move(start2, end2));
+                                children.add(new Node(moves));
+                            }
+                        }
+                    }
                 }
-                allMoves.addAll(allMovesFromDice(points, direction, dice));
             }
         }
 
-        Set<Node> children = new HashSet<Node>();
-        for (Set<Move> moves : allMoves) {
-            children.add(new Node(moves));
-        }
         return children;
     }
 
@@ -147,7 +155,7 @@ class Computer {
         return true;
     }
 
-    private static int[] move(int[] points, Set<Move> moves) {
+    private static int[] move(int[] points, List<Move> moves) {
         for (Move move : moves) {
             points = Game.move(points, move.start, move.end);
         }
@@ -162,7 +170,7 @@ class Computer {
         /**
          * Represents moves that were made from parent node to this node.
          */
-        private Set<Move> moves;
+        private List<Move> moves;
 
         /**
          * Number of searches that went through this node.
@@ -181,7 +189,7 @@ class Computer {
 
         public static int c = 1;
 
-        public Node(Set<Move> moves) {
+        public Node(List<Move> moves) {
             this.moves = moves;
             this.children = new HashSet<Node>();
         }
@@ -192,7 +200,7 @@ class Computer {
 
         public static double UCT(Node root, Node child) {
             if (child.getAll() == 0) {
-                return 100000;
+                return 100;
             }
             return (child.getWins() / child.getAll() + c * Math.sqrt(Math.log(root.getAll()) / child.getAll()));
         }
@@ -213,24 +221,40 @@ class Computer {
         }
 
         public boolean search(int[] points, int direction) {
+            List<Move> moves = makeRandomMoves(points, direction);
+            points = move(points, moves);
+
             if (result(points, direction)) {
                 return true;
             }
-            Node child;
-            Set<Move> moves = makeRandomMoves(points, direction);
-            points = move(points, moves);
-            child = new Node(moves);
+
+            Node child = new Node(moves);
             boolean yield = child.search(points, direction * -1);
             return yield;
         }
 
-        public boolean preSearch(int[] points, int direction) {
+        public Yield preSearch(int[] points, int direction) {
             if (children.isEmpty()) {
                 children = Computer.expand(points, direction);
-                return search(points, -1 * direction);
+                int currAll = 0;
+                int currWins = 0;
+                for (Node child : children) {
+                    if (child.search(points, -1 * direction)) {
+                        child.wins++;
+                        currWins++;
+                    }
+                    child.all++;
+                    currAll++;
+                }
+                all += currAll;
+                wins += currWins;
+                return new Yield(currWins, currAll);
             } else {
                 Node child = bestChild();
-                return child.preSearch(move(points, child.getMoves()), -1 * direction);
+                Yield yield = child.preSearch(move(points, child.getMoves()), -1 * direction);
+                wins += yield.wins;
+                all += yield.all;
+                return yield;
             }
         }
 
@@ -246,7 +270,7 @@ class Computer {
             return children;
         }
 
-        public Set<Move> getMoves() {
+        public List<Move> getMoves() {
             return this.moves;
         }
 
@@ -261,6 +285,16 @@ class Computer {
             this.end = end;
         }
 
+    }
+
+    static class Yield {
+        public final int all;
+        public final int wins;
+
+        public Yield(int wins, int all) {
+            this.wins = wins;
+            this.all = all;
+        }
     }
 
 }

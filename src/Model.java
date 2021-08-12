@@ -80,7 +80,7 @@ class Game {
     /**
      * Rounds is a linked list of board states.
      */
-    private final LinkedList<int[]> rounds;
+    private LinkedList<int[]> rounds;
 
     /**
      * Tells the order of the players by direction (i.e. positive negative).
@@ -90,9 +90,9 @@ class Game {
     // MARK: - Constructors
 
     public Game() {
-        this.points = new int[]{0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2, 0};
+        this.points = new int[] { 0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2, 0 };
         this.rounds = new LinkedList<>();
-        this.turns = new int[]{-1, 1};
+        this.turns = new int[] { -1, 1 };
         this.dice = new ArrayList<>();
 
         this.roll();
@@ -176,7 +176,7 @@ class Game {
      * Tells whether a player can make a move. It has no idea about the dice or
      * anything. It only tells whether the move is strictly valid.
      */
-    public static boolean isMoveValid(int[] board, int start, int end) {
+    public static boolean isMoveValid(int[] points, int start, int end) {
         if (start == end)
             return false;
 
@@ -184,12 +184,12 @@ class Game {
         int direction = diff / Math.abs(diff);
 
         // Check that we are taking from the right pile.
-        if (getPointDirection(board, start) * direction < 0)
+        if (getPointDirection(points, start) * direction < 0)
             return false;
 
         // Number of checkers locked on the bar.
         int bar = getPlayerBar(direction);
-        int locked = Math.abs(board[bar]);
+        int locked = Math.abs(points[bar]);
 
         // Check if we have any checkers locked on the bar.
         if (locked > 0 && bar != start)
@@ -212,7 +212,7 @@ class Game {
             int point = 17 + first; // 17 or 24
 
             for (; first < point; point--) {
-                if (board[point] * direction > 0)
+                if (points[point] * direction > 0)
                     return false;
             }
 
@@ -220,11 +220,11 @@ class Game {
         }
 
         // We can hit the other player only if it has a single checker there.
-        if (board[end] * direction < 0)
-            return Math.abs(board[end]) == 1;
+        if (points[end] * direction < 0)
+            return Math.abs(points[end]) == 1;
 
         // Check that direction is respected.
-        return board[start] * board[end] >= 0;
+        return points[start] * points[end] >= 0;
     }
 
     /**
@@ -314,7 +314,7 @@ class Game {
         int higher = Collections.max(dice);
         int lower = Collections.min(dice);
 
-        for (int move : new int[]{higher, lower}) {
+        for (int move : new int[] { higher, lower }) {
             int end = start + move * direction;
 
             if (isPossibleMove(points, start, end, new ArrayList<>())) {
@@ -448,18 +448,8 @@ class Game {
     }
 
     /**
-     * Reverses the last move, returns the board to previous round and rolls the dice.
-     */
-    public void undo() {
-        if (this.rounds.isEmpty()) return;
-
-        this.points = this.rounds.pollLast();
-        this.roll();
-    }
-
-    /**
-     * Performs a move on a board, takes out the used die and pushes previous
-     * points to round.
+     * Performs a move on a board, takes out the used die and pushes previous points
+     * to round.
      */
     public void move(int start, int end) {
         int moves = Arrays.stream(this.getMovableCheckers()).sum();
@@ -489,6 +479,17 @@ class Game {
         }
 
         this.points = move(this.points, start, end);
+    }
+
+    /**
+     * Performs a moves on a board and takes out the used die. Reverses the board to
+     * previous round and rolls the dice.
+     */
+    public void undo() {
+        if (!rounds.isEmpty()) {
+            this.points = this.rounds.pop();
+            roll();
+        }
     }
 }
 

@@ -2,6 +2,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import javax.swing.JFrame;
@@ -116,10 +117,12 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
         boolean bcpu = turn == 1 && this.black().type == Player.Type.COMPUTER;
 
         if (wcpu || bcpu) {
-            Computer.Move move = this.computer.getMove(game.getPoints(), turn, game.getDice());
+            List<Computer.Move> moves = this.computer.getMoves(game.getPoints().clone(), turn, game.getDice());
 
-            this.board.animate(move.start, move.end);
-            game.move(move.start, move.end);
+            for (Computer.Move move : moves) {
+                this.board.animate(move.start, move.end);
+                game.move(move.start, move.end);
+            }
 
             this.board.repaint();
         }
@@ -196,9 +199,6 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == this.menuItemStartGame) {
             this.onStop();
-        } else if (e.getSource() == this.menuItemRevert) {
-            model.getGame().reverseMove();
-            this.repaint();
         }
 
         if (e.getSource() == this.menuItemUndo) {
