@@ -179,15 +179,14 @@ class Controller extends JFrame
             return;
 
          if (this.movable().isEmpty()) {
+             System.out.println("NO MOVES!");
              // Give away the turn if there's no move to make.
              game.next();
+         } else {
+             // Start the calculation of moves otherwise.
+             System.out.println("Calculating moves!");
+             this.computer.getMoves(Game.clonePoints(game.getPoints()), turn, game.getDice());
          }
-
-        // // Check if computer has to make the next turn as well.
-        // this.tick();
-        // Start the calculation of moves otherwise.
-        System.out.println("Calculating moves!");
-        this.computer.getMoves(Game.clonePoints(game.getPoints()), turn, game.getDice());
     }
 
     /**
