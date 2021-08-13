@@ -392,7 +392,7 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
 
         this.animated.frame++;
 
-        System.out.println(this.animated.frame);
+        //System.out.println(this.animated.frame);
 
         // Stop the animation if needed.
         if (this.animated.frame == FRAMES) {

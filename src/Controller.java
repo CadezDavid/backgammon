@@ -8,7 +8,8 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 
-class Controller extends JFrame implements ActionListener, BoardView.Delegate, SettingsView.Delegate, Computer.Delegate {
+class Controller extends JFrame
+        implements ActionListener, BoardView.Delegate, SettingsView.Delegate, Computer.Delegate {
 
     // MARK: - State
 
@@ -102,7 +103,6 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
         return game.getPoints();
     }
 
-
     /**
      * Returns all drop positions of a lifted checker.
      */
@@ -148,7 +148,8 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
         boolean bcpu = turn == 1 && this.black().type == Player.Type.COMPUTER;
 
         // Check that computer has to make a turn.
-        if (!wcpu && !bcpu) return;
+        if (!wcpu && !bcpu)
+            return;
 
         if (this.movable().isEmpty()) {
             // Give away the turn if there's no move to make.
@@ -192,7 +193,6 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
         this.render(this.settings);
     }
 
-
     @Override
     public void onWhiteChanged(Player white) {
         this.model.white = white;
@@ -235,29 +235,44 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
     public void onMoves(int[] points, List<Computer.Move> moves) {
         System.out.println("CALCULATED");
         Game game = this.model.getGame();
+        for (Computer.Move move : moves) {
+            this.board.animate(move.start, move.end);
+            game.move(move.start, move.end);
+            this.repaint();
+        }
 
         if (game.getPoints() == points) {
-//            this.board.animate(0, 1);
-            
+            // this.board.animate(0, 1);
+
             for (Computer.Move move : moves) {
                 this.board.animate(move.start, move.end);
                 game.move(move.start, move.end);
                 this.repaint();
             }
 
-            // Check if the next move is also computer move.
-            this.tick();
+            // if (game.getPoints().equals(points)) {
+            // for (Computer.Move move : moves) {
+            // this.board.animate(move.start, move.end);
+            // game.move(move.start, move.end);
+            // this.repaint();
+            // }
+
+            // } else {
+            // System.out.println("Points changed while i was calculating..");
         }
+
+        // Check if the next move is also computer move.
+        this.tick();
     }
 
-//    @Override
+    // @Override
     public void onAnimationComplete(int start, int end) {
-//        Game game = this.model.getGame();
-//        game.move(start, end);
-//        this.repaint();
-//
-//        // Check if the next move is also computer move.
-//        this.tick();
+        // Game game = this.model.getGame();
+        // game.move(start, end);
+        // this.repaint();
+        //
+        // // Check if the next move is also computer move.
+        // this.tick();
     }
 
     @Override
@@ -272,5 +287,8 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
         }
 
         this.repaint();
+
+        // Check if computer is next on the move.
+        this.tick();
     }
 }
