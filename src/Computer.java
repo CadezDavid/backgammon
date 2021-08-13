@@ -1,7 +1,6 @@
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
@@ -15,7 +14,7 @@ class Computer {
         /**
          * Triggered when computation finishes.
          */
-        void onMoves(int[] points, List<Move> moves);
+        void onMoves(int[] points, Move moves);
     }
 
     // MARK: - State
@@ -79,7 +78,11 @@ class Computer {
 
                 }
 
-                delegate.onMoves(_points, moves);
+                if (!moves.isEmpty()) {
+                    delegate.onMoves(points, moves.get(0));
+                } else {
+                    System.out.println("Prazna poteza v Computer:84");
+                }
             }
         };
 
@@ -140,34 +143,13 @@ class Computer {
 
         for (int start = bar; start * direction < opponentsBar; start += direction) {
             for (Integer end : Game.getMoves(points, direction, dice, start)) {
-
-                int[] rpoints = Game.move(points, start, end);
-
-                dice.remove((Integer) Math.abs(end - start));
-                ArrayList<ArrayList<Move>> rAllMoves = allMovesFromDice(rpoints, direction,
-                        (ArrayList<Integer>) dice.clone());
-                dice.add((Integer) Math.abs(end - start));
-
-                for (ArrayList<Move> moves : rAllMoves) {
-                    moves.add(new Move(start, end));
-                    allMoves.add(moves);
-                }
+                ArrayList<Move> currMove = new ArrayList<Move>();
+                currMove.add(new Move(start, end));
+                allMoves.add(currMove);
             }
         }
         if (allMoves.isEmpty()) {
             allMoves.add(new ArrayList<Move>());
-        }
-        int max = 0;
-        for (ArrayList<Move> moves : allMoves) {
-            if (max < moves.size()) {
-                max = moves.size();
-            }
-        }
-        ArrayList<ArrayList<Move>> m = new ArrayList<ArrayList<Move>>();
-        for (ArrayList<Move> moves : allMoves) {
-            if (max == moves.size()) {
-                m.add(moves);
-            }
         }
 
         return allMoves;

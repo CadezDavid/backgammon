@@ -157,11 +157,11 @@ class Controller extends JFrame
         } else {
             // Calculate moves otherwise.
             System.out.println("Calculating moves!");
-            this.computer.getMoves(game.getPoints(), turn, game.getDice());
+            this.computer.getMoves(game.getPoints().clone(), turn, game.getDice());
         }
 
         // Check if computer has to make the next turn as well.
-        this.tick();
+        //this.tick();
     }
 
     /**
@@ -232,33 +232,19 @@ class Controller extends JFrame
     }
 
     @Override
-    public void onMoves(int[] points, List<Computer.Move> moves) {
+    public void onMoves(int[] points, Computer.Move move) {
         System.out.println("CALCULATED");
         Game game = this.model.getGame();
-        for (Computer.Move move : moves) {
-            this.board.animate(move.start, move.end);
-            game.move(move.start, move.end);
-            this.repaint();
-        }
 
         if (game.getPoints() == points) {
             // this.board.animate(0, 1);
 
-            for (Computer.Move move : moves) {
-                this.board.animate(move.start, move.end);
-                game.move(move.start, move.end);
-                this.repaint();
-            }
+            this.board.animate(move.start, move.end);
+            game.move(move.start, move.end);
+            this.repaint();
 
-            // if (game.getPoints().equals(points)) {
-            // for (Computer.Move move : moves) {
-            // this.board.animate(move.start, move.end);
-            // game.move(move.start, move.end);
-            // this.repaint();
-            // }
-
-            // } else {
-            // System.out.println("Points changed while i was calculating..");
+        } else {
+            System.out.println("Points changed while i was calculating..");
         }
 
         // Check if the next move is also computer move.
