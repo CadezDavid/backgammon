@@ -1,11 +1,11 @@
-import javax.swing.*;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+
+import javax.swing.SwingWorker;
 
 class Computer {
 
@@ -27,7 +27,7 @@ class Computer {
     // MARK: - Constructor
 
     public Computer(Delegate delegate) {
-        this.r = new Random();
+        r = new Random();
         this.delegate = delegate;
     }
 
@@ -63,7 +63,7 @@ class Computer {
                     k--;
                 }
 
-                return tree.bestChild().getMoves();
+                return tree.mostVisited().getMoves();
             }
 
             @Override
@@ -133,7 +133,7 @@ class Computer {
     private static ArrayList<ArrayList<Move>> allMovesFromDice(int[] points, int direction, ArrayList<Integer> dice) {
         int bar = 25 * (1 - direction) / 2;
         int opponentsBar = 25 * (1 + direction) / 2;
-        List<List<Move>> allMoves = new ArrayList<List<Move>>();
+        ArrayList<ArrayList<Move>> allMoves = new ArrayList<ArrayList<Move>>();
 
         for (int start = bar; start * direction < opponentsBar; start += direction) {
             for (Integer end : Game.getMoves(points, direction, dice, start)) {
@@ -144,7 +144,7 @@ class Computer {
                 ArrayList<ArrayList<Move>> rAllMoves = allMovesFromDice(rpoints, direction, dice);
                 dice.add((Integer) Math.abs(end - start));
 
-                for (List<Move> moves : rAllMoves) {
+                for (ArrayList<Move> moves : rAllMoves) {
                     moves.add(new Move(start, end));
                     allMoves.add(moves);
                 }
@@ -176,7 +176,7 @@ class Computer {
                         for (int throw2 = 1; throw2 < 7; throw2 += direction) {
                             int end2 = start2 + direction * throw2;
                             if (Game.isMoveValid(points1, start2, end2)) {
-                                List<Move> moves = new ArrayList<Move>();
+                                ArrayList<Move> moves = new ArrayList<Move>();
                                 moves.add(new Move(start1, end1));
                                 moves.add(new Move(start2, end2));
                                 children.add(new Node(moves));
@@ -198,7 +198,7 @@ class Computer {
         return true;
     }
 
-    private static int[] move(int[] points, List<Move> moves) {
+    private static int[] move(int[] points, ArrayList<Move> moves) {
         for (Move move : moves) {
             points = Game.move(points, move.start, move.end);
         }
