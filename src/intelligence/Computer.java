@@ -61,10 +61,7 @@ public class Computer {
 
                 int k = ITER;
                 while (k > 0) {
-                    // if (tree.preSearch(points, -1 * direction, k % 100 == 0).wins == 0) {
-                    if (tree.preSearch(points, -1 * direction, false).wins == 0) {
-                        System.out.println("We won");
-                    }
+                    tree.preSearch(points, -1 * direction, k % 100 == 0);
                     k--;
                 }
 
@@ -285,11 +282,6 @@ public class Computer {
             // Checks if this is a winning Node. Has to check only for player
             // that was last on the move.
             if (result(currPoints, direction)) {
-                if (direction == 1) {
-                    System.out.println("Black won");
-                } else {
-                    System.out.println("White won");
-                }
                 // return false, because for his parent node, this isnt good
                 return false;
             }
