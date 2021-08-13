@@ -107,6 +107,18 @@ class Game {
         return this.points;
     }
 
+    public static int[] clonePoints(int[] points) {
+        int[] clone = new int[26];
+        for (int i = 0; i < 26; i++) {
+            clone[i] = points[i];
+        }
+        return clone;
+    }
+
+    public int[] clonePoints() {
+        return clonePoints(this.points);
+    }
+
     /**
      * Returns the current dice.
      */
@@ -365,7 +377,7 @@ class Game {
             return true;
 
         // Otherwise, make the first move and see if we can recursively make it.
-        int[] board = move(points.clone(), start, end);
+        int[] board = move(clonePoints(points), start, end);
 
         for (int j = 0; j < dice.size(); j++) {
             int die = dice.get(j);

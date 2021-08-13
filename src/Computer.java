@@ -40,24 +40,22 @@ class Computer {
         this.tree = new Node(null);
         Delegate delegate = this.delegate;
 
-        int[] points = _points.clone();
+        int[] points = Game.clonePoints(_points);
 
         // Create a worker to carry out the computation.
         SwingWorker<ArrayList<Move>, Void> worker = new SwingWorker<>() {
             @Override
             protected ArrayList<Move> doInBackground() {
                 ArrayList<ArrayList<Move>> allMoves = allMovesFromDice(points, direction, dice);
+                System.out.print("AllMoves from dice: ");
+                System.out.println(allMoves.size());
                 for (ArrayList<Move> moves : allMoves) {
-                    int[] newPoints = points.clone();
-                    for (Move move : moves) {
-                        Game.move(newPoints, move.start, move.end);
-                    }
                     tree.addChild(new Node(moves));
                 }
 
-                int k = 4000;
+                int k = 400;
                 while (k > 0) {
-                    if (k % 400 == 0) {
+                    if (k % 40 == 0) {
                         tree.preSearch(points, direction);
                     }
                     tree.search(points, direction);
@@ -166,12 +164,12 @@ class Computer {
         Set<Node> children = new HashSet<Node>();
 
         for (int start1 = bar; start1 * direction < opponentsBar; start1 += direction) {
-            for (int throw1 = 1; throw1 < 7; throw1 += direction) {
+            for (int throw1 = 1; throw1 < 7; throw1 += 1) {
                 int end1 = start1 + direction * throw1;
                 if (r.nextInt(10) > 8 && Game.isMoveValid(points, start1, end1)) {
-                    int[] points1 = Game.move(points.clone(), start1, end1);
+                    int[] points1 = Game.move(Game.clonePoints(points), start1, end1);
                     for (int start2 = bar; start2 * direction < opponentsBar; start2 += direction) {
-                        for (int throw2 = 1; throw2 < 7; throw2 += direction) {
+                        for (int throw2 = 1; throw2 < 7; throw2 += 1) {
                             int end2 = start2 + direction * throw2;
                             if (Game.isMoveValid(points1, start2, end2)) {
                                 ArrayList<Move> moves = new ArrayList<Move>();
@@ -190,8 +188,9 @@ class Computer {
 
     private static boolean result(int[] points, int direction) {
         for (int i = 0; i < 26; i++) {
-            if (points[i] * direction > 0)
+            if (points[i] * direction > 0) {
                 return false;
+            }
         }
         return true;
     }
@@ -306,7 +305,7 @@ class Computer {
                 return new Yield(currWins, currAll);
             } else {
                 Node child = bestChild();
-                Yield yield = child.preSearch(move(points, child.getMoves()), -1 * direction);
+                Yield yield = child.preSearch(move(Game.clonePoints(points), child.getMoves()), -1 * direction);
                 wins += yield.wins;
                 all += yield.all;
                 return yield;
