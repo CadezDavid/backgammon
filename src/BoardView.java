@@ -98,6 +98,11 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
          * Current game state.
          */
         Game.State state();
+
+        /**
+         * Triggered when animation completes.
+         */
+        void onAnimationComplete(int start, int end);
     }
 
     /**
@@ -385,23 +390,6 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
 
     // MARK: - Animation
 
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        // Check that we are animating.
-        if (this.animated == null) return;
-
-        this.animated.frame++;
-
-        //System.out.println(this.animated.frame);
-
-        // Stop the animation if needed.
-        if (this.animated.frame == FRAMES) {
-            this.animated = null;
-            this.animation.stop();
-        }
-
-        this.repaint();
-    }
 
     // MARK: - Components
 
@@ -959,6 +947,24 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
         // Trigger event.
         DraggedEvent event = new DraggedEvent(this, start, end);
         this.delegate.onDragged(event);
+
+        this.repaint();
+    }
+
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        // Check that we are animating.
+        if (this.animated == null) return;
+
+        this.animated.frame++;
+
+        // Stop the animation if needed.
+        if (this.animated.frame == FRAMES) {
+            this.animation.stop();
+            this.delegate.onAnimationComplete(this.animated.start, this.animated.end);
+            this.animated = null;
+        }
 
         this.repaint();
     }

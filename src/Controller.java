@@ -154,14 +154,14 @@ class Controller extends JFrame
         if (this.movable().isEmpty()) {
             // Give away the turn if there's no move to make.
             game.next();
+
+            // Check if computer has to make the next turn as well.
+            this.tick();
         } else {
-            // Calculate moves otherwise.
+            // Start the calculation of moves otherwise.
             System.out.println("Calculating moves!");
             this.computer.getMoves(game.getPoints().clone(), turn, game.getDice());
         }
-
-        // Check if computer has to make the next turn as well.
-        //this.tick();
     }
 
     /**
@@ -236,29 +236,20 @@ class Controller extends JFrame
         System.out.println("CALCULATED");
         Game game = this.model.getGame();
 
-        if (game.getPoints() == points) {
-            // this.board.animate(0, 1);
-
+        if (game.getPoints().equals(points)) {
             this.board.animate(move.start, move.end);
-            game.move(move.start, move.end);
-            this.repaint();
-
-        } else {
-            System.out.println("Points changed while i was calculating..");
         }
+    }
+
+     @Override
+    public void onAnimationComplete(int start, int end) {
+        // Perform the move in the model as well.
+        Game game = this.model.getGame();
+        game.move(start, end);
+        this.repaint();
 
         // Check if the next move is also computer move.
         this.tick();
-    }
-
-    // @Override
-    public void onAnimationComplete(int start, int end) {
-        // Game game = this.model.getGame();
-        // game.move(start, end);
-        // this.repaint();
-        //
-        // // Check if the next move is also computer move.
-        // this.tick();
     }
 
     @Override
