@@ -1,16 +1,18 @@
+package intelligence;
+
 import java.util.*;
 
 import javax.swing.SwingWorker;
 
 import model.Game;
 
-class Computer {
+public class Computer {
 
     private static final int ITER = 1000;
 
     // MARK: - Delegate
 
-    interface Delegate {
+    public interface Delegate {
         /**
          * Triggered when computation finishes.
          */
@@ -78,7 +80,7 @@ class Computer {
                 if (!moves.isEmpty()) {
                     delegate.onMoves(points, moves.get(0));
                 } else {
-                    System.out.println("Prazna poteza v Computer:84");
+                    System.out.println("Prazna poteza v intelligence.Computer:84");
                 }
             }
         };
@@ -329,7 +331,7 @@ class Computer {
 
     }
 
-    static class Move {
+    public static class Move {
         public final int start;
         public final int end;
 

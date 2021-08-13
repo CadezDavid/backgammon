@@ -11,6 +11,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 
+import intelligence.Computer;
 import model.Game;
 import model.Model;
 import model.Player;
@@ -174,20 +175,19 @@ class Controller extends JFrame
         }
 
         // Check that computer has to make a turn.
-        if ((!wcpu && !bcpu) || game.getState() != Game.State.IN_PROGRESS) {
+        if ((!wcpu && !bcpu) || game.getState() != Game.State.IN_PROGRESS)
             return;
 
-            // if (this.movable().isEmpty()) {
-            // // Give away the turn if there's no move to make.
-            // game.next();
+         if (this.movable().isEmpty()) {
+             // Give away the turn if there's no move to make.
+             game.next();
+         }
 
-            // // Check if computer has to make the next turn as well.
-            // this.tick();
-        } else {
-            // Start the calculation of moves otherwise.
-            System.out.println("Calculating moves!");
-            this.computer.getMoves(Game.clonePoints(game.getPoints()), turn, game.getDice());
-        }
+        // // Check if computer has to make the next turn as well.
+        // this.tick();
+        // Start the calculation of moves otherwise.
+        System.out.println("Calculating moves!");
+        this.computer.getMoves(Game.clonePoints(game.getPoints()), turn, game.getDice());
     }
 
     /**
@@ -259,18 +259,7 @@ class Controller extends JFrame
 
     @Override
     public void onMoves(int[] points, Computer.Move move) {
-        System.out.println("CALCULATED");
-        System.out.print(move.start);
-        System.out.print(" -> ");
-        System.out.println(move.end);
-        System.out.println("========");
-        Game game = this.model.getGame();
         this.board.animate(move.start, move.end);
-        game.move(move.start, move.end);
-        this.repaint();
-        tick();
-
-        // this.board.animate(move.start, move.end);
     }
 
     @Override

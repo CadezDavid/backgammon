@@ -367,7 +367,6 @@ public class Game {
             this.dice.add(val);
             this.dice.add(val);
         }
-        System.out.println(dice);
     }
 
     /**
@@ -423,7 +422,6 @@ public class Game {
 
         // New turn.
         if (this.dice.size() == 0) {
-            System.out.println("We need new dice.");
             this.rounds.push(Game.clonePoints(this.points));
             this.roll();
         }
