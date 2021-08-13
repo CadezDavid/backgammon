@@ -8,7 +8,11 @@ import model.Game;
 
 public class Computer {
 
-    private static final int ITER = 1000;
+    /**
+     * How many searches down the game tree should Computer make, with every tenth
+     * being preSearch which expands one Node.
+     */
+    private static final int ITER = 10000;
 
     // MARK: - Delegate
 
@@ -39,7 +43,7 @@ public class Computer {
      */
     public void getMoves(int[] _points, int direction, ArrayList<Integer> dice) {
         // Save local values.
-        this.tree = new Node(null);
+        this.tree = new Node(new ArrayList<Move>());
         Delegate delegate = this.delegate;
 
         int[] points = Game.clonePoints(_points);
@@ -57,10 +61,7 @@ public class Computer {
 
                 int k = ITER;
                 while (k > 0) {
-                    if (k % 40 == 0) {
-                        tree.preSearch(points, direction);
-                    }
-                    tree.search(points, direction);
+                    tree.preSearch(points, direction, k % 100 == 0);
                     k--;
                 }
 
@@ -228,7 +229,7 @@ public class Computer {
          */
         private Set<Node> children;
 
-        public static int c = 1;
+        public static int c = 2;
 
         public Node(ArrayList<Move> moves) {
             this.moves = moves;
@@ -248,11 +249,9 @@ public class Computer {
         }
 
         public Node bestChild() {
-            Iterator<Node> iter = children.iterator();
-            Node best = iter.next();
-            double max = UCT(this, best);
-            while (iter.hasNext()) {
-                Node child = iter.next();
+            Node best = new Node(null);
+            double max = 0;
+            for (Node child : children) {
                 double uct = UCT(this, child);
                 if (max < uct) {
                     best = child;
@@ -278,23 +277,27 @@ public class Computer {
         }
 
         public boolean search(int[] points, int direction) {
-            ArrayList<Move> moves = makeRandomMoves(points, direction);
-            points = move(points, moves);
+            int[] currPoints = move(points, this.moves);
 
-            if (result(points, direction))
+            // Checks if this is a winning Node. Has to check only for player
+            // that was last on the move.
+            if (result(points, direction)) {
                 return true;
+            }
 
+            ArrayList<Move> moves = makeRandomMoves(points, direction);
             Node child = new Node(moves);
-            return child.search(points, direction * -1);
+
+            return child.search(currPoints, direction * -1);
         }
 
-        public Yield preSearch(int[] points, int direction) {
-            if (children.isEmpty()) {
-                children = Computer.expand(points, direction);
+        public Yield preSearch(int[] points, int direction, boolean expand) {
+            if (children.isEmpty() && expand) {
+                this.children = Computer.expand(points, direction);
                 int currAll = 0;
                 int currWins = 0;
-                for (Node child : children) {
-                    if (child.search(points, -1 * direction)) {
+                for (Node child : this.children) {
+                    if (child.search(move(points, this.moves), -1 * direction)) {
                         child.wins++;
                         currWins++;
                     }
@@ -304,9 +307,17 @@ public class Computer {
                 all += currAll;
                 wins += currWins;
                 return new Yield(currWins, currAll);
+            } else if (children.isEmpty()) {
+                if (search(points, direction)) {
+                    this.wins++;
+                    this.all++;
+                    return new Yield(1, 1);
+                }
+                this.all++;
+                return new Yield(0, 1);
             } else {
                 Node child = bestChild();
-                Yield yield = child.preSearch(move(Game.clonePoints(points), child.getMoves()), -1 * direction);
+                Yield yield = child.preSearch(move(points.clone(), this.moves), -1 * direction, expand);
                 wins += yield.wins;
                 all += yield.all;
                 return yield;
