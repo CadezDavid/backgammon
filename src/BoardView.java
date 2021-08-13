@@ -348,7 +348,7 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
             int aend = this.animated.end;
 
             // Calculate move properties.
-            Point origin = this.getCheckerPosition(astart, Math.abs(board[astart] - 1));
+            Point origin = this.getCheckerPosition(astart, Math.abs(board[astart]) - 1);
             Point target = this.getCheckerPosition(aend, Math.abs(board[aend]));
 
             int x = origin.x + (target.x - origin.x) * this.animated.frame / FRAMES;
@@ -387,9 +387,6 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
             this.paintMessage(g, "You can't move anything. Click anywhere to skip the turn.");
         }
     }
-
-    // MARK: - Animation
-
 
     // MARK: - Components
 
@@ -961,9 +958,13 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
 
         // Stop the animation if needed.
         if (this.animated.frame == FRAMES) {
+            int start = this.animated.start;
+            int end = this.animated.end;
+
             this.animation.stop();
-            this.delegate.onAnimationComplete(this.animated.start, this.animated.end);
             this.animated = null;
+
+            this.delegate.onAnimationComplete(start, end);
         }
 
         this.repaint();

@@ -236,9 +236,9 @@ class Controller extends JFrame
         System.out.println("CALCULATED");
         Game game = this.model.getGame();
 
-        if (game.getPoints().equals(points)) {
-            this.board.animate(move.start, move.end);
-        }
+//        if (game.getPoints().equals(points)) {
+//        }
+        this.board.animate(move.start, move.end);
     }
 
      @Override
