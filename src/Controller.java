@@ -11,7 +11,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 
-class Controller extends JFrame implements ActionListener, BoardView.Delegate, SettingsView.Delegate {
+class Controller extends JFrame implements ActionListener, BoardView.Delegate, SettingsView.Delegate, Computer.Delegate {
 
     // MARK: - State
 
@@ -21,7 +21,7 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
     private final Model model;
 
     /**
-     * Class we use to compute moves with.
+     * Class that we use to compute moves.
      */
     private final Computer computer;
 
@@ -48,7 +48,7 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
         this.model = new Model();
         this.settings = new SettingsView(this);
         this.board = new BoardView(this);
-        this.computer = new Computer();
+        this.computer = new Computer(this);
 
         // MenuBar
         JMenuBar menu_bar = new JMenuBar();
@@ -70,6 +70,18 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
         this.onStop();
     }
 
+    // MARK: - Accessors
+
+    @Override
+    public Player white() {
+        return this.model.white;
+    }
+
+    @Override
+    public Player black() {
+        return this.model.black;
+    }
+
     // MARK: - Methods
 
     /**
@@ -86,10 +98,6 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
         this.render(this.settings);
     }
 
-    @Override
-    public Player white() {
-        return this.model.white;
-    }
 
     @Override
     public void onWhiteChanged(Player white) {
@@ -97,36 +105,10 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
     }
 
     @Override
-    public Player black() {
-        return this.model.black;
-    }
-
-    @Override
     public void onBlackChanged(Player black) {
         this.model.black = black;
     }
 
-    /**
-     * Checks if it has to perform a move.
-     */
-    private void tick() {
-        Game game = this.model.getGame();
-
-        int turn = game.getTurn();
-        boolean wcpu = turn == -1 && this.white().type == Player.Type.COMPUTER;
-        boolean bcpu = turn == 1 && this.black().type == Player.Type.COMPUTER;
-
-        if (wcpu || bcpu) {
-            List<Computer.Move> moves = this.computer.getMoves(game.getPoints().clone(), turn, game.getDice());
-
-            for (Computer.Move move : moves) {
-                this.board.animate(move.start, move.end);
-                game.move(move.start, move.end);
-            }
-
-            this.board.repaint();
-        }
-    }
 
     /**
      * Recreates the window to present the current view.
@@ -141,6 +123,8 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
         this.repaint();
     }
 
+    // MARK: - Methods
+
     @Override
     public Set<Integer> draggable(int start) {
         Game game = this.model.getGame();
@@ -149,7 +133,7 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
 
     @Override
     public Set<Integer> movable() {
-        HashSet<Integer> points = new HashSet<Integer>();
+        HashSet<Integer> points = new HashSet<>();
         Game game = this.model.getGame();
 
         int[] checkers = game.getMovableCheckers();
@@ -173,6 +157,42 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
         if (event.getSource() == this.board) {
             game.move(event.start, event.end);
             this.repaint();
+
+            // Check if the next move is computer move.
+            this.tick();
+        }
+    }
+
+    /**
+     * Checks if it has to perform a move.
+     */
+    private void tick() {
+        Game game = this.model.getGame();
+
+        int turn = game.getTurn();
+        boolean wcpu = turn == -1 && this.white().type == Player.Type.COMPUTER;
+        boolean bcpu = turn == 1 && this.black().type == Player.Type.COMPUTER;
+
+        if (wcpu || bcpu) {
+            System.out.println("Calculating moves!");
+            this.computer.getMoves(game.getPoints(), turn, game.getDice());
+        }
+    }
+
+    @Override
+    public void onMoves(int[] points, List<Computer.Move> moves) {
+        System.out.println("CALCULATED");
+        Game game = this.model.getGame();
+
+        if (game.getPoints() == points) {
+            for (Computer.Move move : moves) {
+                this.board.animate(move.start, move.end);
+                game.move(move.start, move.end);
+                this.repaint();
+            }
+
+            // Check if the next move is also computer move.
+            this.tick();
         }
     }
 
@@ -206,6 +226,7 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
             game.undo();
         }
 
-        this.board.repaint();
+        this.repaint();
     }
+
 }
