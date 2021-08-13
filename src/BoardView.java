@@ -27,9 +27,9 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
     private static final int CHECKERS = 15;
 
     // Duration of an animation in milliseconds.
-    private static final int ANIMATION_DURATION = 100;
+    private static final int ANIMATION_DURATION = 60;
     // Number of frames in an animation.
-    private static final int FRAMES = 50;
+    private static final int FRAMES = 20;
 
     // Board color settings.
     private static final Color BOARD_COLOR = new Color(117, 60, 24);
@@ -276,7 +276,7 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
         // Paint the checkers players have borne off the board.
         int center = this.getWidth() / 2;
 
-        for (int turn : new int[] { -1, 1 }) {
+        for (int turn : new int[]{-1, 1}) {
             Color color = this.getCheckerColor(turn);
 
             int saved = CHECKERS - this.remainingCheckers(turn);
@@ -466,7 +466,7 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
      * Draws a single point on the board.
      */
     private void paintPoint(Graphics g, int index) {
-        /**
+        /*
          * The coordinates as named as shown in the picture regardless of the point
          * orientation.
          *
@@ -483,7 +483,7 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
          * @formatter:on
          */
 
-        /**
+        /*
          * It's important to notice that the top part of the board isn't zero indexed.
          * Because of that the top part has "inverted" odd and even points.
          */
@@ -508,10 +508,10 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
         }
 
         // Each point has an internal color and a light shading over the border.
-        g.fillPolygon(new int[] { x1, x2, x3 }, new int[] { y1, y2, y3 }, 3);
+        g.fillPolygon(new int[]{x1, x2, x3}, new int[]{y1, y2, y3}, 3);
 
         g.setColor(BOARD_EDGES);
-        g.drawPolygon(new int[] { x1, x2, x3 }, new int[] { y1, y2, y3 }, 3);
+        g.drawPolygon(new int[]{x1, x2, x3}, new int[]{y1, y2, y3}, 3);
     }
 
     /**
@@ -524,7 +524,7 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
 
         int margin = BOARD_BORDER + PADDING;
 
-        /**
+        /*
          * We use modulo indexes to calculate the relative position of the checker in a
          * given group.
          *
@@ -685,11 +685,15 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
         // Reset stroke.
         g.setStroke(new BasicStroke(1));
 
-        /**
+        /*
          * To draw the pattern we switch to the polar system as it's easier to process
          * values there.
          */
-        Color[] colors = { new Color(242, 56, 90), new Color(245, 165, 3), new Color(54, 177, 191, 75) };
+        Color[] colors = {
+                new Color(242, 56, 90),
+                new Color(245, 165, 3),
+                new Color(54, 177, 191, 75)
+        };
         int precision = 420;
         int leaves = 6;
 
@@ -762,9 +766,8 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
         int checkers = 0;
         int[] board = this.delegate.board();
 
-        for (int i = 0; i < board.length; i++) {
-            if (direction * board[i] >= 0)
-                checkers += direction * board[i];
+        for (int j : board) {
+            if (direction * j >= 0) checkers += direction * j;
         }
 
         return checkers;
@@ -856,12 +859,20 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
 
         // Makes sure we actually clicked on a checker.
         if (index >= 0) {
+            int checkers = this.delegate.board()[index];
+            int direction = checkers / Math.abs(checkers);
+
+            // Check if we are clicking on a computer checker.
+            Player player = this.delegate.black();
+            if (direction == -1) player = this.delegate.white();
+
+            if (player.type == Player.Type.COMPUTER) return;
+
             this.dragged = index;
             this.mouse = e.getPoint();
             this.drops = this.delegate.draggable(index);
 
-            int checkers = this.delegate.board()[index];
-            this.direction = checkers / Math.abs(checkers);
+            this.direction = direction;
         }
 
         // Rerender the screen.
@@ -875,13 +886,13 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
         int width = this.getWidth();
         int height = this.getHeight();
 
-        /**
+        /*
          * The distance of the closes droppable point.
          */
         Integer point = null;
         double closest = width + height;
 
-        /**
+        /*
          * Check if mouse is out of board bounds (i.e. dragging out) and consider the
          * direction of the dragged stone to see which side is pulling out.
          *
@@ -901,7 +912,7 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
             int dy = this.mouse.y - coord.y;
             double diff = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
 
-            /**
+            /*
              * We always fix the diff, but only make a point selection if it can actually be
              * selected.
              */
@@ -933,7 +944,7 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
 
         // Reset dragging values.
         this.dragged = null;
-        this.drops = new HashSet<Integer>();
+        this.drops = new HashSet<>();
         this.direction = 0;
         this.target = null;
 
