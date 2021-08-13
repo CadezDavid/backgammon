@@ -81,6 +81,14 @@ class Controller extends JFrame
     }
 
     /**
+     * Returns the direction of the player that is currently on turn.
+     */
+    public int turn() {
+        Game game = this.model.getGame();
+        return game.getTurn();
+    }
+
+    /**
      * Returns the rolled dice.
      */
     public int[] dice() {

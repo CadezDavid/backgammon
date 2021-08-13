@@ -13,7 +13,7 @@ import java.util.Set;
  */
 class Model {
 
-    // MARK: - Constatnts
+    // MARK: - Constants
 
     private static final Color WHITE_POINT = new Color(245, 223, 213);
     private static final Color BLACK_POINT = new Color(74, 47, 31);
@@ -30,8 +30,8 @@ class Model {
     // MARK: - Constructor
 
     public Model() {
-        this.white = new Player("WHITE", Player.Type.HUMAN, WHITE_CHECKER, WHITE_POINT);
-        this.black = new Player("BLACK", Player.Type.HUMAN, BLACK_CHECKER, BLACK_POINT);
+        this.white = new Player("White", Player.Type.HUMAN, WHITE_CHECKER, WHITE_POINT);
+        this.black = new Player("Black", Player.Type.HUMAN, BLACK_CHECKER, BLACK_POINT);
 
         this.game = new Game();
     }
@@ -109,14 +109,8 @@ class Game {
 
     public static int[] clonePoints(int[] points) {
         int[] clone = new int[26];
-        for (int i = 0; i < 26; i++) {
-            clone[i] = points[i];
-        }
+        System.arraycopy(points, 0, clone, 0, 26);
         return clone;
-    }
-
-    public int[] clonePoints() {
-        return clonePoints(this.points);
     }
 
     /**

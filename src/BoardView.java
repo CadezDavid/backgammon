@@ -3,6 +3,7 @@ import java.awt.event.*;
 import java.awt.geom.Rectangle2D;
 import java.util.EventObject;
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
 
 import javax.swing.*;
@@ -27,9 +28,9 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
     private static final int CHECKERS = 15;
 
     // Duration of an animation in milliseconds.
-    private static final int ANIMATION_DURATION = 60;
+    private static final int ANIMATION_DURATION = 120;
     // Number of frames in an animation.
-    private static final int FRAMES = 20;
+    private static final int FRAMES = 30;
 
     // Board color settings.
     private static final Color BOARD_COLOR = new Color(117, 60, 24);
@@ -95,6 +96,11 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
         Player black();
 
         /**
+         * Tells the direction of currently active player.
+         */
+        int turn();
+
+        /**
          * Current game state.
          */
         Game.State state();
@@ -144,7 +150,17 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
         public int frame;
     }
 
+    /**
+     * Event trigger that forces redraws with animations.
+     */
     private final Timer animation;
+
+    /**
+     * Event trigger that keeps the board looking live.
+     */
+    private final Timer alive;
+
+    private final Random rand;
 
     /**
      * The checker that is being dragged.
@@ -184,8 +200,14 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
         this.animation.setRepeats(true);
         this.animated = null;
 
+        this.alive = new Timer(100, this);
+        this.alive.setRepeats(true);
+        this.rand = new Random();
+
         this.addMouseListener(this);
         this.addMouseMotionListener(this);
+
+        this.alive.start();
     }
 
     // MARK: - Accessors
@@ -229,6 +251,7 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
 
+
         // Draw the background so it matches bearing off.
         if (this.target == null) {
             this.setBackground(BOARD_BACKGROUND);
@@ -247,6 +270,52 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
 
         // Pain the board with the bar.
         this.paintBoard(g);
+
+        // Paint the players and borne off checkers.
+        int center = this.getWidth() / 2;
+
+        for (int turn : new int[]{-1, 1}) {
+            // Gets the associated player.
+            Player player = this.delegate.black();
+            if (turn == -1) player = this.delegate.white();
+
+            // Checkers
+            int saved = CHECKERS - this.remainingCheckers(turn);
+            int size = (this.getWidth() / 2) / 10;
+
+            for (int i = 0; i < saved; i++) {
+                int x = center + turn * (size + i * size);
+                int y = this.getHeight() - PADDING / 2;
+
+                paintChecker(g, x, y, size / 2, player.checker);
+            }
+
+            g.setFont(new Font("Arial", Font.BOLD, 30));
+
+            // Player names.
+            FontMetrics metrics = g.getFontMetrics();
+            Rectangle2D bounds = metrics.getStringBounds(player.name, g);
+
+            // Checker size.
+            int x = center + (turn * size * 3 / 2) - (1 - turn) / 2 * (int) bounds.getWidth();
+            int y = PADDING / 2;
+
+            g.setColor(player.checker);
+            g.drawString(player.name, x + (size * 3 / 4), y - size / 2 + (int) bounds.getHeight());
+
+            // Paint the checker and indicate the calculation of the computer.
+            Color edge = CHECKER_EDGE;
+            if (this.delegate.turn() == turn) edge = ACTIVE_CHECKER_EDGE;
+            if (this.delegate.turn() == turn && player.type == Player.Type.COMPUTER) {
+                float red = this.rand.nextFloat();
+                float green = this.rand.nextFloat();
+                float blue = this.rand.nextFloat();
+
+                edge = new Color(red, green, blue);
+            }
+
+            paintChecker(g, x, y, size / 2, player.checker, edge);
+        }
 
         // ----------------------------------------------
 
@@ -272,30 +341,13 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
             if (this.animated != null && this.animated.start == i) {
                 int diff = this.animated.end - this.animated.start;
                 int direction = diff / Math.abs(diff);
+
                 checkers -= direction;
             }
 
             for (int j = 0; j < Math.abs(checkers); j++) {
                 Point cord = this.getCheckerPosition(i, j);
                 paintChecker(g, cord.x, cord.y, checkerSize / 2, color, movable.contains(i));
-            }
-        }
-
-        // ----------------------------------------------
-
-        // Paint the checkers players have borne off the board.
-        int center = this.getWidth() / 2;
-
-        for (int turn : new int[]{-1, 1}) {
-            Color color = this.getCheckerColor(turn);
-
-            int saved = CHECKERS - this.remainingCheckers(turn);
-
-            for (int i = 0; i < saved; i++) {
-                int x = center - (saved * checkerSize / 2) + checkerSize / 2 + i * checkerSize;
-                int y = ((1 - turn) / 2 * this.getHeight()) + (turn * PADDING / 2);
-
-                paintChecker(g, x, y, checkerSize / 2, color);
             }
         }
 
@@ -347,9 +399,10 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
             int astart = this.animated.start;
             int aend = this.animated.end;
 
-            // Calculate move properties.
+            // Calculate move properties and account for taking off.
             Point origin = this.getCheckerPosition(astart, Math.abs(board[astart]) - 1);
             Point target = this.getCheckerPosition(aend, Math.abs(board[aend]));
+            if (aend == 0 || aend == 25) target = new Point(this.getWidth() / 2, this.getHeight() - PADDING / 2);
 
             int x = origin.x + (target.x - origin.x) * this.animated.frame / FRAMES;
             int y = origin.y + (target.y - origin.y) * this.animated.frame / FRAMES;
@@ -384,6 +437,7 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
 
         // Paint the alert if necessary.
         if (movable.isEmpty()) {
+            g.setFont(new Font("Arial", Font.BOLD, 20));
             this.paintMessage(g, "You can't move anything. Click anywhere to skip the turn.");
         }
     }
@@ -396,8 +450,6 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
     private void paintMessage(Graphics g, String message) {
         Graphics2D g2d = (Graphics2D) g;
 
-        g.setFont(new Font("Arial", Font.BOLD, 20));
-
         FontMetrics metrics = g.getFontMetrics();
         Rectangle2D bounds = metrics.getStringBounds(message, g);
 
@@ -406,7 +458,7 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
 
         // Draw the background.
         g2d.setColor(RESULT_BACKGROUND);
-        g2d.fillRoundRect((this.getWidth() - width) / 2, (this.getHeight()- height) / 2, width, height, 16, 16);
+        g2d.fillRoundRect((this.getWidth() - width) / 2, (this.getHeight() - height) / 2, width, height, 16, 16);
         g2d.setColor(VICTORY_COLOR);
         g2d.setStroke(new BasicStroke(2));
         g2d.drawRoundRect((this.getWidth() - width) / 2, (this.getHeight() - height) / 2, width, height, 16, 16);
@@ -656,18 +708,16 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
     /**
      * Paints a checker at a given location and a given radius.
      */
-    public static void paintChecker(Graphics _g, int x, int y, int r, Color color, boolean active) {
+    public static void paintChecker(Graphics _g, int x, int y, int r, Color color, Color edge) {
         Graphics2D g = (Graphics2D) _g;
 
         // We start by drawing the outer and inner edges of the checker.
         g.setColor(color);
         g.fillOval(x - r, y - r, 2 * r, 2 * r);
 
-        g.setColor(CHECKER_EDGE);
-        if (active) {
-            g.setColor(ACTIVE_CHECKER_EDGE);
-            g.setStroke(new BasicStroke(2));
-        }
+        // Draw the edge of the checker.
+        g.setColor(edge);
+        g.setStroke(new BasicStroke(2));
         g.drawOval(x - r, y - r, 2 * r, 2 * r);
 
         // Reset stroke.
@@ -715,6 +765,10 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
             g.drawPolyline(xs, ys, precision);
         }
 
+    }
+
+    public static void paintChecker(Graphics g, int x, int y, int r, Color color, boolean active) {
+        paintChecker(g, x, y, r, color, active ? ACTIVE_CHECKER_EDGE : CHECKER_EDGE);
     }
 
     public static void paintChecker(Graphics g, int x, int y, int r, Color color) {
@@ -951,23 +1005,32 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        // Check that we are animating.
-        if (this.animated == null) return;
+        // Process the animation timer.
+        if (e.getSource() == this.animation) {
+            // Check that we are animating.
+            if (this.animated == null) return;
 
-        this.animated.frame++;
+            this.animated.frame++;
 
-        // Stop the animation if needed.
-        if (this.animated.frame == FRAMES) {
-            int start = this.animated.start;
-            int end = this.animated.end;
+            // Stop the animation if needed.
+            if (this.animated.frame == FRAMES) {
+                int start = this.animated.start;
+                int end = this.animated.end;
 
-            this.animation.stop();
-            this.animated = null;
+                this.animation.stop();
+                this.animated = null;
 
-            this.delegate.onAnimationComplete(start, end);
+                this.delegate.onAnimationComplete(start, end);
+            }
+
+            this.repaint();
         }
 
-        this.repaint();
+
+        // Process the indicator timer.
+        if (e.getSource() == this.alive) {
+            this.repaint();
+        }
     }
 
     //

@@ -1,14 +1,17 @@
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.EventObject;
 
-class PlayerView extends JPanel implements PointView.Delegate, CheckerView.Delegate, KeyListener, ItemListener {
+class PlayerView extends JPanel implements PointView.Delegate, CheckerView.Delegate, DocumentListener, ItemListener {
 
     // MARK: - Delegate
 
     interface Delegate {
         Player player(PlayerView source);
+
         /**
          * Event that we trigger once the player changes.
          */
@@ -90,7 +93,8 @@ class PlayerView extends JPanel implements PointView.Delegate, CheckerView.Deleg
         this.add(this.computer, c);
 
         // Events
-        this.name.addKeyListener(this);
+//        this.name.addKeyListener(this);
+        this.name.getDocument().addDocumentListener(this);
         this.computer.addItemListener(this);
     }
 
@@ -122,22 +126,26 @@ class PlayerView extends JPanel implements PointView.Delegate, CheckerView.Deleg
     }
 
     @Override
-    public void keyTyped(KeyEvent e) { }
-
-    @Override
-    public void keyPressed(KeyEvent e) {
-        if (e.getSource() == this.name) {
-            Player player = this.delegate.player(this);
-            player.name = this.name.getText();
-
-            PlayerChangedEvent event = new PlayerChangedEvent(this, player);
-            this.delegate.onPlayerChange(event);
-        }
+    public void insertUpdate(DocumentEvent e) {
+        Player player = this.delegate.player(this);
+        player.name = this.name.getText();
+        PlayerChangedEvent event = new PlayerChangedEvent(this, player);
+        this.delegate.onPlayerChange(event);
+        System.out.println(player.name);
     }
 
     @Override
-    public void keyReleased(KeyEvent e) { }
+    public void removeUpdate(DocumentEvent e) {
+        Player player = this.delegate.player(this);
+        player.name = this.name.getText();
+        PlayerChangedEvent event = new PlayerChangedEvent(this, player);
+        this.delegate.onPlayerChange(event);
+        System.out.println(player.name);
+    }
 
+    @Override
+    public void changedUpdate(DocumentEvent e) {
+    }
 
     @Override
     public void onColorChanged(CheckerView.ColorChangedEvent e) {
