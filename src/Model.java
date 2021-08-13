@@ -417,12 +417,13 @@ class Game {
         }
 
         // Double the points on combo.
-        if (dice.get(0).equals(dice.get(1))) {
-            int val = dice.get(0);
+        if (this.dice.get(0).equals(this.dice.get(1))) {
+            int val = this.dice.get(0);
 
-            dice.add(val);
-            dice.add(val);
+            this.dice.add(val);
+            this.dice.add(val);
         }
+        System.out.println(dice);
     }
 
     /**
@@ -478,7 +479,8 @@ class Game {
 
         // New turn.
         if (this.dice.size() == 0) {
-            this.rounds.push(this.points.clone());
+            System.out.println("We need new dice.");
+            this.rounds.push(Game.clonePoints(this.points));
             this.roll();
         }
 

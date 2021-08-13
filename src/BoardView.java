@@ -27,9 +27,9 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
     private static final int CHECKERS = 15;
 
     // Duration of an animation in milliseconds.
-    private static final int ANIMATION_DURATION = 60;
+    private static final int ANIMATION_DURATION = 200;
     // Number of frames in an animation.
-    private static final int FRAMES = 20;
+    private static final int FRAMES = 40;
 
     // Board color settings.
     private static final Color BOARD_COLOR = new Color(117, 60, 24);
@@ -624,7 +624,7 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
         Point base = this.getPointBase(index);
 
         int x = base.x;
-        int y = base.y + this.getPointOrientation(index) * (size / 2);
+        int y = base.y + direction * (size / 2);
 
         // Coordinates calculation.
         int offset = (checker / row) * CHECKER_OFFSET;

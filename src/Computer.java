@@ -57,7 +57,6 @@ class Computer {
                         tree.preSearch(points, direction);
                     }
                     tree.search(points, direction);
-                    System.out.println(k);
                     k--;
                 }
 

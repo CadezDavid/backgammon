@@ -1,6 +1,9 @@
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.EventObject;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -140,23 +143,29 @@ class Controller extends JFrame
     /**
      * Checks if it has to perform a move.
      */
-    private void tick() {
+    public void tick() {
         Game game = this.model.getGame();
 
         int turn = game.getTurn();
         boolean wcpu = turn == -1 && this.white().type == Player.Type.COMPUTER;
         boolean bcpu = turn == 1 && this.black().type == Player.Type.COMPUTER;
 
+        if (turn == 1) {
+            System.out.println("Black is on the move!");
+        } else {
+            System.out.println("White is on the move!");
+        }
+
         // Check that computer has to make a turn.
-        if (!wcpu && !bcpu)
+        if ((!wcpu && !bcpu) || game.getState() != Game.State.IN_PROGRESS) {
             return;
 
-        if (this.movable().isEmpty()) {
-            // Give away the turn if there's no move to make.
-            game.next();
+            // if (this.movable().isEmpty()) {
+            // // Give away the turn if there's no move to make.
+            // game.next();
 
-            // Check if computer has to make the next turn as well.
-            this.tick();
+            // // Check if computer has to make the next turn as well.
+            // this.tick();
         } else {
             // Start the calculation of moves otherwise.
             System.out.println("Calculating moves!");
@@ -234,17 +243,20 @@ class Controller extends JFrame
     @Override
     public void onMoves(int[] points, Computer.Move move) {
         System.out.println("CALCULATED");
+        System.out.print(move.start);
+        System.out.print(" -> ");
+        System.out.println(move.end);
+        System.out.println("========");
         Game game = this.model.getGame();
         this.board.animate(move.start, move.end);
         game.move(move.start, move.end);
         this.repaint();
+        tick();
 
-//        if (game.getPoints().equals(points)) {
-//        }
-        this.board.animate(move.start, move.end);
+        // this.board.animate(move.start, move.end);
     }
 
-     @Override
+    @Override
     public void onAnimationComplete(int start, int end) {
         // Perform the move in the model as well.
         Game game = this.model.getGame();
