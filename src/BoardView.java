@@ -75,6 +75,11 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
         void onDragged(DraggedEvent event);
 
         /**
+         * Called whenever somebody clicks on the screen.
+         */
+        void onClick(EventObject event);
+
+        /**
          * Current dice.
          */
         int[] dice();
@@ -352,9 +357,30 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
         }
 
         // ----------------------------------------------
-        // Paint the winning screen.
 
-        this.paintResult(g);
+        // Paint the winning screen.
+        Game.State state = this.delegate.state();
+        if (state == Game.State.WIN_BLACK || state == Game.State.WIN_WHITE) {
+            // Draw the text.
+            String message = "";
+
+            if (state == Game.State.WIN_BLACK) {
+                Player player = this.delegate.black();
+                message = "Winner is " + player.name + "!";
+            }
+
+            if (state == Game.State.WIN_WHITE) {
+                Player player = this.delegate.white();
+                message = player.name + " has won!";
+            }
+
+            this.paintMessage(g, message);
+        }
+
+        // Paint the alert if necessary.
+        if (movable.isEmpty()) {
+            this.paintMessage(g, "You can't move anything. Click anywhere to skip the turn.");
+        }
     }
 
     // MARK: - Animation
@@ -382,52 +408,29 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
     /**
      * Paints the result of the game.
      */
-    private void paintResult(Graphics g) {
+    private void paintMessage(Graphics g, String message) {
         Graphics2D g2d = (Graphics2D) g;
 
-        int width = this.getWidth();
-        int height = this.getHeight();
+        g.setFont(new Font("Arial", Font.BOLD, 20));
 
-        Game.State state = this.delegate.state();
+        FontMetrics metrics = g.getFontMetrics();
+        Rectangle2D bounds = metrics.getStringBounds(message, g);
 
-        // Don't draw anything while in progress.
-        if (state == Game.State.IN_PROGRESS)
-            return;
-
-        Dimension size = new Dimension(width / 3, height / 5);
+        int width = this.getWidth() / 10 + (int) bounds.getWidth();
+        int height = this.getHeight() / 10 + (int) bounds.getHeight();
 
         // Draw the background.
         g2d.setColor(RESULT_BACKGROUND);
-        g2d.fillRoundRect((width - size.width) / 2, (height - size.height) / 2, size.width, size.height, 16, 16);
+        g2d.fillRoundRect((this.getWidth() - width) / 2, (this.getHeight()- height) / 2, width, height, 16, 16);
         g2d.setColor(VICTORY_COLOR);
         g2d.setStroke(new BasicStroke(2));
-        g2d.drawRoundRect((width - size.width) / 2, (height - size.height) / 2, size.width, size.height, 16, 16);
+        g2d.drawRoundRect((this.getWidth() - width) / 2, (this.getHeight() - height) / 2, width, height, 16, 16);
 
-        // Draw the text.
-        String message = "";
-        Color color = VICTORY_COLOR;
+        // Draw the message.
+        int x = (this.getWidth() - (int) bounds.getWidth()) / 2;
+        int y = this.getHeight() / 2;
 
-        if (state == Game.State.WIN_BLACK) {
-            Player player = this.delegate.black();
-            message = "Winner is " + player.name + "!";
-            color = player.checker;
-        }
-
-        if (state == Game.State.WIN_WHITE) {
-            Player player = this.delegate.white();
-            message = player.name + " has won!";
-            color = player.checker;
-        }
-
-        g.setColor(color);
-        g.setFont(new Font("Arial", Font.BOLD, size.height / 5));
-        FontMetrics metrics = g.getFontMetrics();
-
-        Rectangle2D bounds = metrics.getStringBounds(message, g);
-
-        int x = (width - (int) bounds.getWidth()) / 2;
-        int y = height / 2;
-
+        g.setColor(Color.BLACK);
         g.drawString(message, x, y);
     }
 
@@ -836,6 +839,11 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
 
     @Override
     public void mousePressed(MouseEvent e) {
+        // Trigger the click event.
+        EventObject event = new EventObject(this);
+        this.delegate.onClick(event);
+
+        // Calculate drag.
         int x = e.getX();
         int y = e.getY();
 

@@ -90,9 +90,9 @@ class Game {
     // MARK: - Constructors
 
     public Game() {
-        this.points = new int[] { 0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2, 0 };
+        this.points = new int[]{0, 2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2, 0};
         this.rounds = new LinkedList<>();
-        this.turns = new int[] { -1, 1 };
+        this.turns = new int[]{-1, 1};
         this.dice = new ArrayList<>();
 
         this.roll();
@@ -314,7 +314,7 @@ class Game {
         int higher = Collections.max(dice);
         int lower = Collections.min(dice);
 
-        for (int move : new int[] { higher, lower }) {
+        for (int move : new int[]{higher, lower}) {
             int end = start + move * direction;
 
             if (isPossibleMove(points, start, end, new ArrayList<>())) {
@@ -452,14 +452,6 @@ class Game {
      * to round.
      */
     public void move(int start, int end) {
-        int moves = Arrays.stream(this.getMovableCheckers()).sum();
-
-        if (moves == 0) {
-            this.rounds.push(this.points.clone());
-            this.roll();
-            return;
-        }
-
         if (start == end)
             return;
 
@@ -479,6 +471,17 @@ class Game {
         }
 
         this.points = move(this.points, start, end);
+    }
+
+    /**
+     * Calculates the next turn in case there's no moves.
+     */
+    public void next() {
+        int moves = Arrays.stream(this.getMovableCheckers()).sum();
+        if (moves > 0) return;
+
+        this.rounds.push(this.points.clone());
+        this.roll();
     }
 
     /**

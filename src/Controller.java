@@ -1,9 +1,6 @@
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -82,7 +79,104 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
         return this.model.black;
     }
 
+    /**
+     * Returns the rolled dice.
+     */
+    public int[] dice() {
+        Game game = this.model.getGame();
+        ArrayList<Integer> dice = game.getDice();
+        int[] clone = new int[dice.size()];
+
+        for (int i = 0; i < dice.size(); i++) {
+            clone[i] = dice.get(i);
+        }
+
+        return clone;
+    }
+
+    /**
+     * Returns the board.
+     */
+    public int[] board() {
+        Game game = this.model.getGame();
+        return game.getPoints();
+    }
+
+
+    /**
+     * Returns all drop positions of a lifted checker.
+     */
+    public Set<Integer> draggable(int start) {
+        Game game = this.model.getGame();
+        return game.getMoves(start);
+    }
+
+    /**
+     * Returns all possible moves in this turn.
+     */
+    public Set<Integer> movable() {
+        HashSet<Integer> points = new HashSet<>();
+        Game game = this.model.getGame();
+
+        int[] checkers = game.getMovableCheckers();
+        for (int i = 0; i < checkers.length; i++) {
+            if (checkers[i] > 0)
+                points.add(i);
+        }
+
+        return points;
+    }
+
+    /**
+     * Returns the state of the current game.
+     */
+    public Game.State state() {
+        Game game = this.model.getGame();
+        return game.getState();
+    }
+
     // MARK: - Methods
+
+    /**
+     * Checks if it has to perform a move.
+     */
+    private void tick() {
+        Game game = this.model.getGame();
+
+        int turn = game.getTurn();
+        boolean wcpu = turn == -1 && this.white().type == Player.Type.COMPUTER;
+        boolean bcpu = turn == 1 && this.black().type == Player.Type.COMPUTER;
+
+        // Check that computer has to make a turn.
+        if (!wcpu && !bcpu) return;
+
+        if (this.movable().isEmpty()) {
+            // Give away the turn if there's no move to make.
+            game.next();
+        } else {
+            // Calculate moves otherwise.
+            System.out.println("Calculating moves!");
+            this.computer.getMoves(game.getPoints(), turn, game.getDice());
+        }
+
+        // Check if computer has to make the next turn as well.
+        this.tick();
+    }
+
+    /**
+     * Recreates the window to present the current view.
+     */
+    private void render(JPanel view) {
+        this.getContentPane().removeAll();
+
+        this.getContentPane().add(view);
+        this.setSize(view.getPreferredSize());
+
+        this.revalidate();
+        this.repaint();
+    }
+
+    // MARK: - Events
 
     /**
      * Starts a new game.
@@ -109,47 +203,6 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
         this.model.black = black;
     }
 
-
-    /**
-     * Recreates the window to present the current view.
-     */
-    private void render(JPanel view) {
-        this.getContentPane().removeAll();
-
-        this.getContentPane().add(view);
-        this.setSize(view.getPreferredSize());
-
-        this.revalidate();
-        this.repaint();
-    }
-
-    // MARK: - Methods
-
-    @Override
-    public Set<Integer> draggable(int start) {
-        Game game = this.model.getGame();
-        return game.getMoves(start);
-    }
-
-    @Override
-    public Set<Integer> movable() {
-        HashSet<Integer> points = new HashSet<>();
-        Game game = this.model.getGame();
-
-        int[] checkers = game.getMovableCheckers();
-        for (int i = 0; i < checkers.length; i++) {
-            if (checkers[i] > 0)
-                points.add(i);
-        }
-
-        return points;
-    }
-
-    public Game.State state() {
-        Game game = this.model.getGame();
-        return game.getState();
-    }
-
     @Override
     public void onDragged(BoardView.DraggedEvent event) {
         Game game = this.model.getGame();
@@ -163,19 +216,18 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
         }
     }
 
-    /**
-     * Checks if it has to perform a move.
-     */
-    private void tick() {
-        Game game = this.model.getGame();
+    @Override
+    public void onClick(EventObject event) {
+        if (event.getSource() == this.board) {
+            if (this.movable().isEmpty()) {
+                Game game = this.model.getGame();
+                game.next();
 
-        int turn = game.getTurn();
-        boolean wcpu = turn == -1 && this.white().type == Player.Type.COMPUTER;
-        boolean bcpu = turn == 1 && this.black().type == Player.Type.COMPUTER;
+                this.repaint();
 
-        if (wcpu || bcpu) {
-            System.out.println("Calculating moves!");
-            this.computer.getMoves(game.getPoints(), turn, game.getDice());
+                // Check if computer goes next.
+                this.tick();
+            }
         }
     }
 
@@ -185,6 +237,8 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
         Game game = this.model.getGame();
 
         if (game.getPoints() == points) {
+//            this.board.animate(0, 1);
+            
             for (Computer.Move move : moves) {
                 this.board.animate(move.start, move.end);
                 game.move(move.start, move.end);
@@ -196,23 +250,14 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
         }
     }
 
-    @Override
-    public int[] dice() {
-        Game game = this.model.getGame();
-        ArrayList<Integer> dice = game.getDice();
-        int[] clone = new int[dice.size()];
-
-        for (int i = 0; i < dice.size(); i++) {
-            clone[i] = dice.get(i);
-        }
-
-        return clone;
-    }
-
-    @Override
-    public int[] board() {
-        Game game = this.model.getGame();
-        return game.getPoints();
+//    @Override
+    public void onAnimationComplete(int start, int end) {
+//        Game game = this.model.getGame();
+//        game.move(start, end);
+//        this.repaint();
+//
+//        // Check if the next move is also computer move.
+//        this.tick();
     }
 
     @Override
@@ -228,5 +273,4 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
 
         this.repaint();
     }
-
 }
