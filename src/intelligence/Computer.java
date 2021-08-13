@@ -61,7 +61,10 @@ public class Computer {
 
                 int k = ITER;
                 while (k > 0) {
-                    tree.preSearch(points, direction, k % 100 == 0);
+                    // if (tree.preSearch(points, -1 * direction, k % 100 == 0).wins == 0) {
+                    if (tree.preSearch(points, -1 * direction, false).wins == 0) {
+                        System.out.println("We won");
+                    }
                     k--;
                 }
 
@@ -281,24 +284,36 @@ public class Computer {
 
             // Checks if this is a winning Node. Has to check only for player
             // that was last on the move.
-            if (result(points, direction)) {
-                return true;
+            if (result(currPoints, direction)) {
+                if (direction == 1) {
+                    System.out.println("Black won");
+                } else {
+                    System.out.println("White won");
+                }
+                // return false, because for his parent node, this isnt good
+                return false;
             }
 
             ArrayList<Move> moves = makeRandomMoves(points, direction);
             Node child = new Node(moves);
 
-            return child.search(currPoints, direction * -1);
+            return !child.search(currPoints, direction * -1);
         }
 
         public Yield preSearch(int[] points, int direction, boolean expand) {
-            if (children.isEmpty() && expand) {
-                this.children = Computer.expand(points, direction);
+            int[] currPoints = move(points, this.moves);
+            if (result(currPoints, direction)) {
+                wins++;
+                all++;
+                return new Yield(0, 1);
+            } else if (children.isEmpty() && expand) {
+                this.children = Computer.expand(points, -1 * direction);
                 int currAll = 0;
                 int currWins = 0;
                 for (Node child : this.children) {
-                    if (child.search(move(points, this.moves), -1 * direction)) {
+                    if (child.search(currPoints, -1 * direction)) {
                         child.wins++;
+                    } else {
                         currWins++;
                     }
                     child.all++;
@@ -306,21 +321,21 @@ public class Computer {
                 }
                 all += currAll;
                 wins += currWins;
-                return new Yield(currWins, currAll);
+                return new Yield(currAll - currWins, currAll);
             } else if (children.isEmpty()) {
                 if (search(points, direction)) {
                     this.wins++;
                     this.all++;
-                    return new Yield(1, 1);
+                    return new Yield(0, 1);
                 }
                 this.all++;
-                return new Yield(0, 1);
+                return new Yield(1, 1);
             } else {
                 Node child = bestChild();
-                Yield yield = child.preSearch(move(points.clone(), this.moves), -1 * direction, expand);
+                Yield yield = child.preSearch(currPoints, -1 * direction, expand);
                 wins += yield.wins;
                 all += yield.all;
-                return yield;
+                return new Yield(yield.all - yield.wins, yield.all);
             }
         }
 
