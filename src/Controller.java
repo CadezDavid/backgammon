@@ -122,6 +122,10 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
             for (Computer.Move move : moves) {
                 this.board.animate(move.start, move.end);
                 game.move(move.start, move.end);
+                System.out.print(move.start);
+                System.out.print(" -> ");
+                System.out.println(move.end);
+                System.out.println("=========");
             }
 
             this.board.repaint();
@@ -173,6 +177,7 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
         if (event.getSource() == this.board) {
             game.move(event.start, event.end);
             this.repaint();
+            tick();
         }
     }
 
@@ -207,5 +212,6 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
         }
 
         this.board.repaint();
+        tick();
     }
 }

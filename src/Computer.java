@@ -30,14 +30,16 @@ class Computer {
             tree.addChild(new Node(moves));
         }
 
-        int k = 50;
+        int k = 1000;
         while (k > 0) {
-            tree.preSearch(points, direction);
-            System.out.println(k);
+            if (k % 100 == 0) {
+                tree.preSearch(points, direction);
+            }
+            tree.search(points, direction);
             k--;
         }
 
-        return tree.bestChild().getMoves();
+        return tree.mostVisited().getMoves();
     }
 
     /**
@@ -90,10 +92,6 @@ class Computer {
         int bar = 25 * (1 - direction) / 2;
         int opponentsBar = 25 * (1 + direction) / 2;
         List<List<Move>> allMoves = new ArrayList<List<Move>>();
-        allMoves.add(new ArrayList<Move>());
-        if (dice.isEmpty()) {
-            return allMoves;
-        }
 
         for (int start = bar; start * direction < opponentsBar; start += direction) {
             for (Integer end : Game.getMoves(points, direction, dice, start)) {
@@ -104,19 +102,23 @@ class Computer {
                 List<List<Move>> rAllMoves = allMovesFromDice(rpoints, direction, dice);
                 dice.add((Integer) Math.abs(end - start));
 
-                for (List<Move> set : rAllMoves) {
-                    set.add(new Move(start, end));
-                    allMoves.add(set);
+                for (List<Move> moves : rAllMoves) {
+                    moves.add(new Move(start, end));
+                    allMoves.add(moves);
                 }
             }
         }
+        if (allMoves.isEmpty()) {
+            allMoves.add(new ArrayList<Move>());
+        }
+
         return allMoves;
     }
 
     /**
      * Returns children that come from current node. expand doesnt check all
-     * possible Nodes it could come to in two moves, but rather a tenth of
-     * them, otherwise the tree would grow too quickly.
+     * possible Nodes it could come to in two moves, but rather a tenth of them,
+     * otherwise the tree would grow too quickly.
      */
     private static Set<Node> expand(int[] points, int direction) {
         int bar = 25 * (1 - direction) / 2;
@@ -126,12 +128,12 @@ class Computer {
         for (int start1 = bar; start1 * direction < opponentsBar; start1 += direction) {
             for (int throw1 = 1; throw1 < 7; throw1 += direction) {
                 int end1 = start1 + direction * throw1;
-                if (Game.isMoveValid(points, start1, end1)) {
+                if (r.nextInt(10) > 8 && Game.isMoveValid(points, start1, end1)) {
                     int[] points1 = Game.move(points.clone(), start1, end1);
                     for (int start2 = bar; start2 * direction < opponentsBar; start2 += direction) {
                         for (int throw2 = 1; throw2 < 7; throw2 += direction) {
                             int end2 = start2 + direction * throw2;
-                            if (Game.isMoveValid(points1, start2, end2) && r.nextInt(10) > 8) {
+                            if (Game.isMoveValid(points1, start2, end2)) {
                                 List<Move> moves = new ArrayList<Move>();
                                 moves.add(new Move(start1, end1));
                                 moves.add(new Move(start2, end2));
@@ -215,6 +217,21 @@ class Computer {
                 if (max < uct) {
                     best = child;
                     max = uct;
+                }
+            }
+            return best;
+        }
+
+        public Node mostVisited() {
+            Iterator<Node> iter = children.iterator();
+            Node best = iter.next();
+            double max = best.getAll();
+            while (iter.hasNext()) {
+                Node child = iter.next();
+                double curr = child.getAll();
+                if (max < curr) {
+                    best = child;
+                    max = curr;
                 }
             }
             return best;
