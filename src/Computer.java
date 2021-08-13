@@ -56,9 +56,12 @@ class Computer {
                     tree.addChild(new Node(moves));
                 }
 
-                int k = 50;
+                int k = 4000;
                 while (k > 0) {
-                    tree.preSearch(points, direction);
+                    if (k % 400 == 0) {
+                        tree.preSearch(points, direction);
+                    }
+                    tree.search(points, direction);
                     System.out.println(k);
                     k--;
                 }
@@ -141,7 +144,8 @@ class Computer {
                 int[] rpoints = Game.move(points, start, end);
 
                 dice.remove((Integer) Math.abs(end - start));
-                ArrayList<ArrayList<Move>> rAllMoves = allMovesFromDice(rpoints, direction, dice);
+                ArrayList<ArrayList<Move>> rAllMoves = allMovesFromDice(rpoints, direction,
+                        (ArrayList<Integer>) dice.clone());
                 dice.add((Integer) Math.abs(end - start));
 
                 for (ArrayList<Move> moves : rAllMoves) {
@@ -152,6 +156,18 @@ class Computer {
         }
         if (allMoves.isEmpty()) {
             allMoves.add(new ArrayList<Move>());
+        }
+        int max = 0;
+        for (ArrayList<Move> moves : allMoves) {
+            if (max < moves.size()) {
+                max = moves.size();
+            }
+        }
+        ArrayList<ArrayList<Move>> m = new ArrayList<ArrayList<Move>>();
+        for (ArrayList<Move> moves : allMoves) {
+            if (max == moves.size()) {
+                m.add(moves);
+            }
         }
 
         return allMoves;
@@ -245,7 +261,8 @@ class Computer {
             if (child.getAll() == 0) {
                 return 100;
             }
-            return ((float) child.getWins() / (float) child.getAll() + c * Math.sqrt(Math.log(root.getAll()) / child.getAll()));
+            return ((float) child.getWins() / (float) child.getAll()
+                    + c * Math.sqrt(Math.log(root.getAll()) / child.getAll()));
         }
 
         public Node bestChild() {
@@ -282,8 +299,8 @@ class Computer {
             ArrayList<Move> moves = makeRandomMoves(points, direction);
             points = move(points, moves);
 
-            if (result(points, direction)) return true;
-
+            if (result(points, direction))
+                return true;
 
             Node child = new Node(moves);
             return child.search(points, direction * -1);

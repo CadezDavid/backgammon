@@ -11,7 +11,8 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 
-class Controller extends JFrame implements ActionListener, BoardView.Delegate, SettingsView.Delegate, Computer.Delegate {
+class Controller extends JFrame
+        implements ActionListener, BoardView.Delegate, SettingsView.Delegate, Computer.Delegate {
 
     // MARK: - State
 
@@ -98,7 +99,6 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
         this.render(this.settings);
     }
 
-
     @Override
     public void onWhiteChanged(Player white) {
         this.model.white = white;
@@ -108,7 +108,6 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
     public void onBlackChanged(Player black) {
         this.model.black = black;
     }
-
 
     /**
      * Recreates the window to present the current view.
@@ -175,7 +174,7 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
 
         if (wcpu || bcpu) {
             System.out.println("Calculating moves!");
-            this.computer.getMoves(game.getPoints(), turn, game.getDice());
+            this.computer.getMoves(game.getPoints().clone(), turn, game.getDice());
         }
     }
 
@@ -183,17 +182,25 @@ class Controller extends JFrame implements ActionListener, BoardView.Delegate, S
     public void onMoves(int[] points, List<Computer.Move> moves) {
         System.out.println("CALCULATED");
         Game game = this.model.getGame();
-
-        if (game.getPoints() == points) {
-            for (Computer.Move move : moves) {
-                this.board.animate(move.start, move.end);
-                game.move(move.start, move.end);
-                this.repaint();
-            }
-
-            // Check if the next move is also computer move.
-            this.tick();
+        for (Computer.Move move : moves) {
+            this.board.animate(move.start, move.end);
+            game.move(move.start, move.end);
+            this.repaint();
         }
+
+
+        // if (game.getPoints().equals(points)) {
+        // for (Computer.Move move : moves) {
+        // this.board.animate(move.start, move.end);
+        // game.move(move.start, move.end);
+        // this.repaint();
+        // }
+
+        // } else {
+        // System.out.println("Points changed while i was calculating..");
+        // }
+        // Check if the next move is also computer move.
+        this.tick();
     }
 
     @Override
