@@ -1,12 +1,10 @@
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 
 import javax.swing.SwingWorker;
 
 class Computer {
+
+    private static final int ITER = 1000;
 
     // MARK: - Delegate
 
@@ -53,7 +51,7 @@ class Computer {
                     tree.addChild(new Node(moves));
                 }
 
-                int k = 400;
+                int k = ITER;
                 while (k > 0) {
                     if (k % 40 == 0) {
                         tree.preSearch(points, direction);
@@ -73,7 +71,7 @@ class Computer {
                 try {
                     moves = get();
                 } catch (Exception e) {
-
+                    System.out.println("ERROR: " + e.getMessage());
                 }
 
                 if (!moves.isEmpty()) {

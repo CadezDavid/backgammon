@@ -98,6 +98,11 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
          * Current game state.
          */
         Game.State state();
+
+        /**
+         * Triggered when animation completes.
+         */
+        void onAnimationComplete(int start, int end);
     }
 
     /**
@@ -343,7 +348,7 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
             int aend = this.animated.end;
 
             // Calculate move properties.
-            Point origin = this.getCheckerPosition(astart, Math.abs(board[astart] - 1));
+            Point origin = this.getCheckerPosition(astart, Math.abs(board[astart]) - 1);
             Point target = this.getCheckerPosition(aend, Math.abs(board[aend]));
 
             int x = origin.x + (target.x - origin.x) * this.animated.frame / FRAMES;
@@ -381,26 +386,6 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
         if (movable.isEmpty()) {
             this.paintMessage(g, "You can't move anything. Click anywhere to skip the turn.");
         }
-    }
-
-    // MARK: - Animation
-
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        // Check that we are animating.
-        if (this.animated == null) return;
-
-        this.animated.frame++;
-
-        //System.out.println(this.animated.frame);
-
-        // Stop the animation if needed.
-        if (this.animated.frame == FRAMES) {
-            this.animated = null;
-            this.animation.stop();
-        }
-
-        this.repaint();
     }
 
     // MARK: - Components
@@ -959,6 +944,28 @@ class BoardView extends JPanel implements ActionListener, MouseListener, MouseMo
         // Trigger event.
         DraggedEvent event = new DraggedEvent(this, start, end);
         this.delegate.onDragged(event);
+
+        this.repaint();
+    }
+
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        // Check that we are animating.
+        if (this.animated == null) return;
+
+        this.animated.frame++;
+
+        // Stop the animation if needed.
+        if (this.animated.frame == FRAMES) {
+            int start = this.animated.start;
+            int end = this.animated.end;
+
+            this.animation.stop();
+            this.animated = null;
+
+            this.delegate.onAnimationComplete(start, end);
+        }
 
         this.repaint();
     }
