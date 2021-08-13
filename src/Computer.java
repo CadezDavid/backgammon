@@ -2,6 +2,8 @@ import java.util.*;
 
 import javax.swing.SwingWorker;
 
+import model.Game;
+
 class Computer {
 
     private static final int ITER = 1000;
@@ -208,7 +210,7 @@ class Computer {
         /**
          * Represents moves that were made from parent node to this node.
          */
-        private ArrayList<Move> moves;
+        private final ArrayList<Move> moves;
 
         /**
          * Number of searches that went through this node.

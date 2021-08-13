@@ -1,62 +1,12 @@
-import java.awt.Color;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Set;
+package model;
 
-/**
- * Model represents the state of the app. Everything that persists for a longer
- * period of time or is used by many parts of the code should be defined in
- * model.
- */
-class Model {
 
-    // MARK: - Constants
-
-    private static final Color WHITE_POINT = new Color(245, 223, 213);
-    private static final Color BLACK_POINT = new Color(74, 47, 31);
-    private static final Color WHITE_CHECKER = new Color(255, 232, 222);
-    private static final Color BLACK_CHECKER = new Color(51, 46, 44);
-
-    // MARK: - State
-
-    private Game game;
-
-    public Player black;
-    public Player white;
-
-    // MARK: - Constructor
-
-    public Model() {
-        this.white = new Player("White", Player.Type.HUMAN, WHITE_CHECKER, WHITE_POINT);
-        this.black = new Player("Black", Player.Type.HUMAN, BLACK_CHECKER, BLACK_POINT);
-
-        this.game = new Game();
-    }
-
-    // MARK: - Methods
-
-    /**
-     * Starts a new game.
-     */
-    public void startGame() {
-        this.game = new Game();
-    }
-
-    /**
-     * Returns the currently played game.
-     */
-    public Game getGame() {
-        return this.game;
-    }
-}
+import java.util.*;
 
 /**
  * Outlines a state of a single game.
  */
-class Game {
+public class Game {
 
     /**
      * Points is a 26-items long array. Even though there are only 24 points in the
@@ -120,7 +70,7 @@ class Game {
         return this.dice;
     }
 
-    enum State {
+    public enum State {
         IN_PROGRESS, WIN_BLACK, WIN_WHITE
     }
 
@@ -212,7 +162,7 @@ class Game {
              * We check every point besides the ones at home if there's our checker on it.
              * There shouldn't be!
              *
-             * Player can only bear checkers off the board if all of them are home.
+             * model.Player can only bear checkers off the board if all of them are home.
              */
             int first = 7 * (1 - direction) / 2; // 0 or 7
             int point = 17 + first; // 17 or 24
@@ -502,41 +452,3 @@ class Game {
     }
 }
 
-/**
- * Player outlines a single player in the game.
- */
-class Player {
-
-    /**
-     * Tells the name of the player that we display in the game.
-     */
-    public String name;
-
-    /**
-     * Tells whether a player is a human or a computer.
-     */
-    public Type type;
-
-    enum Type {
-        COMPUTER, HUMAN
-    }
-
-    /**
-     * The color of the checker on the board.
-     */
-    public Color checker;
-
-    /**
-     * Color of the point of this player.
-     */
-    public Color point;
-
-    // MARK: - Constructor
-
-    public Player(String name, Type type, Color checker, Color point) {
-        this.name = name;
-        this.type = type;
-        this.checker = checker;
-        this.point = point;
-    }
-}

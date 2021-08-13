@@ -1,3 +1,5 @@
+package view;
+
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -5,11 +7,13 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.EventObject;
 
-class PlayerView extends JPanel implements PointView.Delegate, CheckerView.Delegate, DocumentListener, ItemListener {
+import model.*;
+
+public class PlayerView extends JPanel implements PointView.Delegate, CheckerView.Delegate, DocumentListener, ItemListener {
 
     // MARK: - Delegate
 
-    interface Delegate {
+    public interface Delegate {
         Player player(PlayerView source);
 
         /**

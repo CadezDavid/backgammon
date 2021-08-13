@@ -8,13 +8,22 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 
+import model.Game;
+import model.Model;
+import model.Player;
+
+import view.BoardView;
+import view.SettingsView;
+
+//
+
 class Controller extends JFrame
         implements ActionListener, BoardView.Delegate, SettingsView.Delegate, Computer.Delegate {
 
     // MARK: - State
 
     /**
-     * Model holds all data we use in the app.
+     * model.Model holds all data we use in the app.
      */
     private final Model model;
 
@@ -252,7 +261,7 @@ class Controller extends JFrame
         this.board.animate(move.start, move.end);
     }
 
-     @Override
+    @Override
     public void onAnimationComplete(int start, int end) {
         // Perform the move in the model as well.
         Game game = this.model.getGame();

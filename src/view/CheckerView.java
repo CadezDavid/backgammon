@@ -1,3 +1,5 @@
+package view;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -7,7 +9,7 @@ import java.util.EventObject;
 /**
  * Checker view that lets us pick the checker color.
  */
-class CheckerView extends JPanel implements MouseListener {
+public class CheckerView extends JPanel implements MouseListener {
 
     public interface Delegate {
         /**

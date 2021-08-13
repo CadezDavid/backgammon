@@ -1,3 +1,5 @@
+package view;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.Rectangle2D;
@@ -8,11 +10,13 @@ import java.util.Set;
 
 import javax.swing.*;
 
+import model.*;
+
 /**
  * This file contains everything related to drawing the board.
  */
 
-class BoardView extends JPanel implements ActionListener, MouseListener, MouseMotionListener {
+public class BoardView extends JPanel implements ActionListener, MouseListener, MouseMotionListener {
     // Offset from the edge of the screen.
     private static final int PADDING = 75;
 

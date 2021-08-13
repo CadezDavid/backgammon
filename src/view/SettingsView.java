@@ -1,14 +1,20 @@
+package view;
+
+import view.PlayerView;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.*;
 
+import model.*;
+
 /**
  * This file contains the getting started view.
  */
 
-class SettingsView extends JPanel implements ActionListener, PlayerView.Delegate {
+public class SettingsView extends JPanel implements ActionListener, PlayerView.Delegate {
     // Offset from the edge of the screen.
     private static final int PADDING = 75;
 
